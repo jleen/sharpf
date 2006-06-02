@@ -8,8 +8,10 @@ namespace SaturnValley.SharpF
         {
             System.Console.WriteLine("#f");
                 
-            Dump(Parser.Parse(
-                Lexer.Lex(Console.OpenStandardInput()).GetEnumerator()));
+            Dump(Evaluator.Eval(
+                Parser.Parse(Lexer.Lex(
+                    Console.OpenStandardInput()).GetEnumerator()),
+                Environment.CreateDefaultEnvironment()));
         }
 
         public static void Dump(Datum a)
@@ -40,6 +42,15 @@ namespace SaturnValley.SharpF
                 string newpref = prefix + "    ";
                 Dump(p.car, newpref);
                 Dump(p.cdr, newpref);
+            }
+            else if (a is Closure)
+            {
+                Console.WriteLine(prefix + "CLOSURE PARAMS:");
+                Closure c = a as Closure;
+                string newpref = prefix + "    ";
+                Dump(c.formals);
+                Console.WriteLine(prefix + "CLOSURE BODY:");
+                Dump(c.body);
             }
             else
             {

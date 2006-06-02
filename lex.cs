@@ -47,18 +47,26 @@ namespace SaturnValley.SharpF
 
     internal class Lexer
     {
+        const string symbolChars = @"!$%&*/:<=>?^_~A-Za-z";
+        const string subseqChars = @"+-.@0-9";
+        const string wordBoundary = @"(?=([ \t()';]|$))";
+
         public static readonly TokenData[] Tokens =
         {
             new TokenData(TokenType.Whitespace,
                           new Regex(@"^([ \t]+|;.*)")),
             new TokenData(TokenType.Identifier,
-                          new Regex("^[a-z]+")),
+                          new Regex(@"^([" + symbolChars + @"]" +
+                                    @"[" + symbolChars + subseqChars + @"]*" +
+                                    @"|\+|-|\.\.\.)" + wordBoundary)),
             new TokenData(TokenType.Number,
-                          new Regex("^[0-9]+")),
+                          new Regex("^[0-9]+" + wordBoundary)),
             new TokenData(TokenType.Open,
                           new Regex(@"^\(")),
             new TokenData(TokenType.Close,
-                          new Regex(@"^\)"))
+                          new Regex(@"^\)")),
+            new TokenData(TokenType.Quote,
+                          new Regex(@"'"))
         };
 
         public static IEnumerable<Token> Lex(Stream s)
@@ -76,7 +84,8 @@ namespace SaturnValley.SharpF
                         Match m = td.regex.Match(line.Substring(pos));
                         if (m.Success)
                         {
-                            yield return new Token(td.type, m.Value);
+                            if (td.type != TokenType.Whitespace)
+                                yield return new Token(td.type, m.Value);
                             pos += m.Length;
                             goto okay;
                         }

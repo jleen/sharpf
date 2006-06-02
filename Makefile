@@ -6,5 +6,5 @@ clean:
 	-rm sharpf.exe
 	-rm sharpf.pdb
 
-sharpf.exe: sharpf.cs lex.cs parse.cs data.cs
+sharpf.exe: sharpf.cs lex.cs parse.cs data.cs env.cs eval.cs
 	csc /debug $^

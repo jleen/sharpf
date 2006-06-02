@@ -23,7 +23,7 @@ namespace SaturnValley.SharpF
             switch (token.type)
             {
                 case TokenType.Identifier: {
-                    return new Symbol(token.text);
+                    return new Symbol(token.text.ToLowerInvariant());
                 }
                 case TokenType.Number: {
                     return new Number(System.Int32.Parse(token.text));
@@ -33,6 +33,11 @@ namespace SaturnValley.SharpF
                 }
                 case TokenType.Close: {
                     return null;
+                }
+                case TokenType.Quote: {
+                    return new Pair(new Symbol("quote"),
+                                    new Pair(Parse(tokens),
+                                             null));
                 }
             };
 
