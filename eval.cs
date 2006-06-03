@@ -18,10 +18,26 @@ namespace SaturnValley.SharpF
                     {
                         case "lambda":
                         {
-                            System.Console.WriteLine("lambda");
                             Pair formals = (Pair)((Pair)p.cdr).car;
-                            Datum body = ((Pair)((Pair)p.cdr).cdr).car;
+                            Datum body = (Pair)((Pair)p.cdr).cdr;
                             return new Closure(env, formals, body);
+                        }
+
+                        case "quote":
+                        {
+                            return ((Pair)p.cdr).car;
+                        }
+                        case "begin":
+                        {
+                            return EvalSequence((Pair)p.cdr, env);
+                        }
+                        case "define":
+                        {
+                            Symbol name = (Symbol)((Pair)p.cdr).car;
+                            Datum val_exp = ((Pair)((Pair)p.cdr).cdr).car;
+
+                            env.Bind(name, Eval(val_exp, env));
+                            return new Unspecified();
                         }
                     }
                 }
@@ -51,7 +67,7 @@ namespace SaturnValley.SharpF
                 args = (Pair)args.cdr;
                 formals = (Pair)formals.cdr;
             }
-            return Eval(func.body, env);
+            return EvalSequence((Pair)func.body, env);
         }
 
         public static Pair EvalList(Pair exps, Environment env)
@@ -61,6 +77,19 @@ namespace SaturnValley.SharpF
             else
                 return new Pair(Eval(exps.car, env),
                                 EvalList((Pair)exps.cdr, env));
+        }
+
+        public static Datum EvalSequence(Pair exps, Environment env)
+        {
+            if (null == exps.cdr)
+            {
+                return Eval(exps.car, env);
+            }
+            else
+            {
+                Eval(exps.car, env);
+                return EvalSequence((Pair)exps.cdr, env);
+            }
         }
     }
 }

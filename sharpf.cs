@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace SaturnValley.SharpF
 {
@@ -8,10 +9,17 @@ namespace SaturnValley.SharpF
         {
             System.Console.WriteLine("#f");
                 
-            Dump(Evaluator.Eval(
-                Parser.Parse(Lexer.Lex(
-                    Console.OpenStandardInput()).GetEnumerator()),
-                Environment.CreateDefaultEnvironment()));
+            Environment env = Environment.CreateDefaultEnvironment();
+            while (true)
+            {
+                IEnumerator<Token> tokens =
+                    Lexer.Lex(Console.OpenStandardInput()).GetEnumerator();
+                tokens.MoveNext();
+                Dump(
+                    Evaluator.Eval(
+                        Parser.Parse(tokens),
+                        env));
+            }
         }
 
         public static void Dump(Datum a)
@@ -51,6 +59,10 @@ namespace SaturnValley.SharpF
                 Dump(c.formals);
                 Console.WriteLine(prefix + "CLOSURE BODY:");
                 Dump(c.body);
+            }
+            else if (a is Unspecified)
+            {
+                Console.WriteLine(prefix + "UNSPECIFIED VALUE");
             }
             else
             {

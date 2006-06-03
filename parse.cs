@@ -7,18 +7,20 @@ namespace SaturnValley.SharpF
     {
         public static Datum ParseList(IEnumerator<Token> tokens)
         {
-            Datum car = Parse(tokens);
-            if (car == null)
+            if (!tokens.MoveNext())
                 return null;
+
+            Token token = tokens.Current;
+            if (token.type == TokenType.Close)
+                return null;
+
+            Datum car = Parse(tokens);
             Datum cdr = ParseList(tokens);
             return new Pair(car, cdr);
         }
 
         public static Datum Parse(IEnumerator<Token> tokens)
         {
-            if (!tokens.MoveNext())
-                return null;
-
             Token token = tokens.Current;
             switch (token.type)
             {
@@ -31,10 +33,8 @@ namespace SaturnValley.SharpF
                 case TokenType.Open: {
                     return ParseList(tokens);
                 }
-                case TokenType.Close: {
-                    return null;
-                }
                 case TokenType.Quote: {
+                    tokens.MoveNext();
                     return new Pair(new Symbol("quote"),
                                     new Pair(Parse(tokens),
                                              null));

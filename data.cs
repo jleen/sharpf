@@ -4,6 +4,10 @@ namespace SaturnValley.SharpF
     {
     }
 
+    public class Unspecified : Datum
+    {
+    }
+
     public class Pair : Datum
     {
         public Datum car;
