@@ -16,9 +16,11 @@ namespace SaturnValley.SharpF
                     Lexer.Lex(Console.OpenStandardInput()).GetEnumerator();
                 tokens.MoveNext();
                 Dump(
-                    Evaluator.Eval(
-                        Parser.Parse(tokens),
-                        env));
+                    Evaluator.Trampoline(
+                        new Evaluator.TrampCall(
+                            Evaluator.Eval,
+                            Parser.Parse(tokens),
+                            env)));
             }
         }
 

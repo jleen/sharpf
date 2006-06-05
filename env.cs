@@ -20,12 +20,15 @@ namespace SaturnValley.SharpF
 
         public Datum Lookup(Symbol sym)
         {
-            if (bindings.ContainsKey(sym.name))
-                return bindings[sym.name];
-            else if (parent != null)
-                return parent.Lookup(sym);
-            else
-                throw new System.Exception("Unable to look up " + sym.name);
+            Environment env = this;
+            while (env != null)
+            {
+                if (env.bindings.ContainsKey(sym.name))
+                    return env.bindings[sym.name];
+                env = env.parent;
+            }
+
+            throw new System.Exception("Unable to look up " + sym.name);
         }
 
         public static Environment CreateDefaultEnvironment()
