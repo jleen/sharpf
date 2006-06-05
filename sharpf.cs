@@ -18,7 +18,7 @@ namespace SaturnValley.SharpF
                 Dump(
                     Evaluator.Trampoline(
                         new Evaluator.TrampCall(
-                            Evaluator.Eval,
+                            Evaluator.TrampTarget.Eval,
                             Parser.Parse(tokens),
                             env)));
             }

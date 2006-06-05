@@ -2,7 +2,14 @@ namespace SaturnValley.SharpF
 {
     public static class Evaluator
     {
-        public delegate TrampCall TrampTarget(Datum arg, Environment e);
+        public enum TrampTarget
+        {
+            Continue,
+            Eval,
+            EvalSequence,
+            EvalList,
+            Apply
+        }
 
         public class TrampCall
         {
@@ -31,10 +38,171 @@ namespace SaturnValley.SharpF
 
         public static Datum Trampoline(TrampCall call)
         {
-            while (call.target != null)
+            while (call.target != TrampTarget.Continue)
             {
-                call = call.target(call.arg, call.env);
-                if (call.target == null &&
+                switch (call.target)
+                {
+                    case TrampTarget.Eval:
+                    {
+                        Datum exp = call.arg;
+                        Environment env = call.env;
+
+                        if (exp is Symbol)
+                        {
+                            call.target = TrampTarget.Continue;
+                            call.arg = env.Lookup((Symbol)exp);
+                            goto NextCall;
+                        }
+                        if (exp is Pair)
+                        {
+                            Pair p = (Pair)exp;
+
+                            if (p.car is Symbol)
+                            {
+                                switch ((p.car as Symbol).name)
+                                {
+                                    case "lambda":
+                                    {
+                                        Pair formals = (Pair)((Pair)p.cdr).car;
+                                        Datum body = (Pair)((Pair)p.cdr).cdr;
+                                        call.target = TrampTarget.Continue;
+                                        call.arg =
+                                            new Closure(env, formals, body);
+                                        goto NextCall;
+                                    }
+
+                                    case "quote":
+                                    {
+                                        call.target = TrampTarget.Continue;
+                                        call.arg = ((Pair)p.cdr).car;
+                                        goto NextCall;
+                                    }
+                                    case "begin":
+                                    {
+                                        call.target =
+                                            TrampTarget.EvalSequence;
+                                        call.arg = p.cdr;
+                                        goto NextCall;
+                                    }
+                                    case "define":
+                                    {
+                                        Symbol name =
+                                            (Symbol)((Pair)p.cdr).car;
+                                        Datum val_exp =
+                                            ((Pair)((Pair)p.cdr).cdr).car;
+
+                                        env.Bind(
+                                            name,
+                                            Trampoline(new TrampCall(
+                                                TrampTarget.Eval,
+                                                val_exp, env)));
+                                        call.target = TrampTarget.Continue;
+                                        call.arg = new Unspecified();
+                                        goto NextCall;
+                                    }
+                                }
+                            }
+
+                            Datum func =
+                                Trampoline(new TrampCall(
+                                    TrampTarget.Eval, p.car, env));
+                            Pair args =
+                                (Pair)Trampoline(new TrampCall(
+                                    TrampTarget.EvalList,
+                                    p.cdr, env));
+
+                            Primitive prim = func as Primitive;
+                            if (prim != null)
+                            {
+                                call.target = TrampTarget.Continue;
+                                call.arg = prim.implementation(args);
+                                goto NextCall;
+                            }
+
+                            call.target = TrampTarget.Apply;
+                            call.arg = new Pair(func, args);
+                            goto NextCall;
+                        }
+                        else
+                        {
+                            call.target = TrampTarget.Continue;
+                            call.arg = exp;
+                            goto NextCall;
+                        }
+                    }
+                    
+                    case TrampTarget.EvalSequence:
+                    {
+                        Pair exps = (Pair)call.arg;
+                        Environment env = call.env;
+
+                        if (null == exps.cdr)
+                        {
+                            call.target = TrampTarget.Eval;
+                            call.arg = exps.car;
+                            call.env = env;
+                            goto NextCall;
+                        }
+                        else
+                        {
+                            call.target = TrampTarget.Eval;
+                            call.arg = exps.car;
+                            call.env = env;
+                            call.next = new TrampCall(
+                                TrampTarget.EvalSequence, exps.cdr, env);
+                            goto NextCall;
+                        }
+                    }
+
+                    case TrampTarget.Apply:
+                    {
+                        Pair p = (Pair)call.arg;
+                        Environment parent = call.env;
+
+                        Closure func = (Closure)p.car;
+                        Pair args = (Pair)p.cdr;
+
+                        Environment env = new Environment(parent);
+                        Pair formals = func.formals;
+                        while (formals != null)
+                        {
+                            env.Bind((Symbol)formals.car, args.car);
+                            args = (Pair)args.cdr;
+                            formals = (Pair)formals.cdr;
+                        }
+
+                        call.target = TrampTarget.EvalSequence;
+                        call.arg = func.body;
+                        call.env = env;
+                        goto NextCall;
+                    }
+
+                    case TrampTarget.EvalList:
+                    {
+                        Pair exps = (Pair)call.arg;
+                        Environment env = call.env;
+
+                        if (exps == null)
+                        {
+                            call.target = TrampTarget.Continue;
+                            call.arg = null;
+                            goto NextCall;
+                        }
+                        else
+                        {
+                            call.target = TrampTarget.Continue;
+                            call.arg = new Pair(
+                                Trampoline(new TrampCall(
+                                    TrampTarget.Eval, exps.car, env)),
+                                Trampoline(new TrampCall(
+                                    TrampTarget.EvalList, exps.cdr, env)));
+                            goto NextCall;
+                        }
+                    }
+                }
+
+            NextCall:
+                if (call.target == TrampTarget.Continue &&
                     call.next != null)
                 {
                     call = call.next;
@@ -42,140 +210,6 @@ namespace SaturnValley.SharpF
             }
 
             return call.arg;
-        }
-
-        public static TrampCall Eval(Datum exp, Environment env)
-        {
-            if (exp is Symbol)
-            {
-                return new TrampCall(
-                    null,
-                    env.Lookup((Symbol)exp),
-                    null);
-            }
-            if (exp is Pair)
-            {
-                Pair p = (Pair)exp;
-                
-                if (p.car is Symbol)
-                {
-                    switch ((p.car as Symbol).name)
-                    {
-                        case "lambda":
-                        {
-                            Pair formals = (Pair)((Pair)p.cdr).car;
-                            Datum body = (Pair)((Pair)p.cdr).cdr;
-                            return new TrampCall(
-                                null,
-                                new Closure(env, formals, body),
-                                null);
-                        }
-
-                        case "quote":
-                        {
-                            return new TrampCall(
-                                null,
-                                ((Pair)p.cdr).car,
-                                null);
-                        }
-                        case "begin":
-                        {
-                            return new TrampCall(
-                                EvalSequence,
-                                p.cdr,
-                                env);
-                        }
-                        case "define":
-                        {
-                            Symbol name = (Symbol)((Pair)p.cdr).car;
-                            Datum val_exp = ((Pair)((Pair)p.cdr).cdr).car;
-
-                            env.Bind(
-                                name,
-                                Trampoline(
-                                    new TrampCall(Eval, val_exp, env)));
-                            return new TrampCall(
-                                null,
-                                new Unspecified(),
-                                null);
-                        }
-                    }
-                }
-
-                Datum func = Trampoline(new TrampCall(Eval, p.car, env));
-                Pair args = EvalList((Pair)p.cdr, env);
-
-                Primitive prim = func as Primitive;
-                if (prim != null)
-                {
-                    return new TrampCall(
-                        null,
-                        prim.implementation(args),
-                        null);
-                }
-
-                return new TrampCall(
-                    Apply,
-                    new Pair(func, args),
-                    env);
-            }
-            else
-            {
-                return new TrampCall(
-                    null,
-                    exp,
-                    null);
-            }
-        }
-
-        public static TrampCall Apply(Datum d, Environment parent)
-        {
-            Pair p = (Pair)d;
-            Closure func = (Closure)p.car;
-            Pair args = (Pair)p.cdr;
-
-            Environment env = new Environment(parent);
-            Pair formals = func.formals;
-            while (formals != null)
-            {
-                env.Bind((Symbol)formals.car, args.car);
-                args = (Pair)args.cdr;
-                formals = (Pair)formals.cdr;
-            }
-            return new TrampCall(
-                EvalSequence,
-                func.body,
-                env);
-        }
-
-        public static Pair EvalList(Pair exps, Environment env)
-        {
-            if (exps == null)
-                return null;
-            else
-                return new Pair(
-                    Trampoline(new TrampCall(Eval, exps.car, env)),
-                    EvalList((Pair)exps.cdr, env));
-        }
-
-        public static TrampCall EvalSequence(Datum d, Environment env)
-        {
-            Pair exps = (Pair)d;
-            if (null == exps.cdr)
-            {
-                return new TrampCall(Eval, exps.car, env);
-            }
-            else
-            {
-                return new TrampCall(
-                    Eval,
-                    exps.car,
-                    env,
-                    new TrampCall(
-                        EvalSequence,
-                        exps.cdr,
-                        env));
-            }
         }
     }
 }

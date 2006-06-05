@@ -44,7 +44,11 @@ namespace SaturnValley.SharpF
                              {
                                  Number n = args.car as Number;
                                  if (n != null)
+                                 {
                                      accum += n.val;
+                                     if (n.val == 10000)
+                                        System.Console.WriteLine("10000!");
+                                 }
                                  args = (Pair)args.cdr;
                              }
                              return new Number(accum);
