@@ -34,26 +34,7 @@ namespace SaturnValley.SharpF
         public static Environment CreateDefaultEnvironment()
         {
             Environment env = new Environment(null);
-
-            env.Bind(new Symbol("+"),
-                     new Primitive(
-                         delegate(Pair args)
-                         {
-                             int accum = 0;
-                             while (args != null)
-                             {
-                                 Number n = args.car as Number;
-                                 if (n != null)
-                                 {
-                                     accum += n.val;
-                                     if (n.val == 10000)
-                                        System.Console.WriteLine("10000!");
-                                 }
-                                 args = (Pair)args.cdr;
-                             }
-                             return new Number(accum);
-                         }));
-
+            Primitives.BindPrimitives(env);
             return env;
         }
     }

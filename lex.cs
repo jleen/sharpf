@@ -66,13 +66,13 @@ namespace SaturnValley.SharpF
             new TokenData(TokenType.Close,
                           new Regex(@"^\)")),
             new TokenData(TokenType.Quote,
-                          new Regex(@"'"))
+                          new Regex(@"'")),
+            new TokenData(TokenType.String,
+                          new Regex(@"""[^""]*"""))
         };
 
-        public static IEnumerable<Token> Lex(Stream s)
+        public static IEnumerable<Token> Lex(StreamReader sr)
         {
-            StreamReader sr = new StreamReader(s);
-
             string line;
             while (null != (line = sr.ReadLine()))
             {

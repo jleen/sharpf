@@ -115,7 +115,7 @@ namespace SaturnValley.SharpF
                             if (prim != null)
                             {
                                 call.target = TrampTarget.Continue;
-                                call.arg = prim.implementation(args);
+                                call.arg = prim.implementation(args, env);
                                 goto NextCall;
                             }
 

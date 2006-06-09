@@ -7,68 +7,75 @@ namespace SaturnValley.SharpF
     {
         public static void Main(string[] args)
         {
+            Environment env = Environment.CreateDefaultEnvironment();
+            Primitives.Load("library.scm", env);
             System.Console.WriteLine("#f");
                 
-            Environment env = Environment.CreateDefaultEnvironment();
             while (true)
             {
-                IEnumerator<Token> tokens =
-                    Lexer.Lex(Console.OpenStandardInput()).GetEnumerator();
-                tokens.MoveNext();
-                Dump(
+                Print(
                     Evaluator.Trampoline(
                         new Evaluator.TrampCall(
-                            Evaluator.TrampTarget.Eval,
-                            Parser.Parse(tokens),
-                            env)));
+                                Evaluator.TrampTarget.Eval,
+                                Read(new System.IO.StreamReader(
+                                    Console.OpenStandardInput())),
+                                env)));
+                System.Console.WriteLine();
             }
         }
 
-        public static void Dump(Datum a)
+        public static Datum Read(System.IO.StreamReader sr)
         {
-            Dump(a, String.Empty);
+            IEnumerator<Token> tokens =
+                Lexer.Lex(sr).GetEnumerator();
+            tokens.MoveNext();
+            return Parser.Parse(tokens);
         }
 
-        public static void Dump(Datum a, string prefix)
+        public static void Print(Datum a)
         {
             if (a == null)
             {
-                Console.WriteLine(prefix + "NIL");
+                Console.Write("()");
             }
             else if (a is Symbol)
             {
-                Console.WriteLine(prefix + "SYMBOL " +
-                                  (a as Symbol).name);
+                Console.Write((a as Symbol).name);
             }
             else if (a is Number)
             {
-                Console.WriteLine(prefix + "NUMBER " +
-                                 (a as Number).val.ToString());
+                Console.Write((a as Number).val.ToString());
             }
             else if (a is Pair)
             {
-                Console.WriteLine(prefix + "PAIR:");
                 Pair p = a as Pair;
-                string newpref = prefix + "    ";
-                Dump(p.car, newpref);
-                Dump(p.cdr, newpref);
+                Console.Write("(");
+                Print(p.car);
+                Console.Write(" . ");
+                Print(p.cdr);
+                Console.Write(")");
             }
             else if (a is Closure)
             {
-                Console.WriteLine(prefix + "CLOSURE PARAMS:");
                 Closure c = a as Closure;
-                string newpref = prefix + "    ";
-                Dump(c.formals);
-                Console.WriteLine(prefix + "CLOSURE BODY:");
-                Dump(c.body);
+                Console.Write("#<closure ");
+                Print(c.formals);
+                Console.Write(" ");
+                Print(c.body);
+                Console.Write(">");
             }
             else if (a is Unspecified)
             {
-                Console.WriteLine(prefix + "UNSPECIFIED VALUE");
+                Console.Write("#<unspecified>");
+            }
+            else if (a is SharpF.String)
+            {
+                Console.Write("\"" + (a as SharpF.String).val + "\"");
             }
             else
             {
-                Console.WriteLine(prefix + "DUMP ERROR: " + a.ToString());
+                Console.Write("#<unprintable: " +
+                                  a.ToString() + ">");
             }
         }
     }

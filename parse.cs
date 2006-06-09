@@ -39,6 +39,10 @@ namespace SaturnValley.SharpF
                                     new Pair(Parse(tokens),
                                              null));
                 }
+                case TokenType.String: {
+                    return new String(token.text.Substring(
+                        1, token.text.Length - 2));
+                }
             };
 
             return new Symbol("unknown:" + token.type.ToString());

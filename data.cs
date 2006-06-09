@@ -8,6 +8,16 @@ namespace SaturnValley.SharpF
     {
     }
 
+    public class String : Datum
+    {
+        public string val;
+
+        public String(string v)
+        {
+            val = v;
+        }
+    }
+
     public class Pair : Datum
     {
         public Datum car;
@@ -53,7 +63,8 @@ namespace SaturnValley.SharpF
         }
     }
 
-    public delegate Datum PrimitiveImplementation(Pair args);
+    public delegate Datum PrimitiveImplementation(
+        Pair args, Environment env);
 
     public class Primitive : Datum
     {
