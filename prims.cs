@@ -1,11 +1,24 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 
 namespace SaturnValley.SharpF
 {
+    public class PrimitiveAttribute : Attribute
+    {
+        public string name;
+
+        public PrimitiveAttribute(string n)
+        {
+            name = n;
+        }
+    }
+
     static class Primitives
     {
         // Arithmetic
+        [Primitive("+")]
         public static Datum Add(List<Datum> args)
         {
             int accum = 0;
@@ -16,18 +29,24 @@ namespace SaturnValley.SharpF
             }
             return new Number(accum);
         }
+
+        [Primitive("-")]
         public static Datum Subtract(List<Datum> args)
         {
             Number i = (Number)args[0];
             Number j = (Number)args[1];
             return new Number(i.val - j.val);
         }
+
+        [Primitive("=")]
         public static Datum NumEqual(List<Datum> args)
         {
             Number i = (Number)args[0];
             Number j = (Number)args[1];
             return new Boolean(i.val == j.val);
         }
+
+        [Primitive("<")]
         public static Datum LessThan(List<Datum> args)
         {
             Number i = (Number)args[0];
@@ -36,20 +55,27 @@ namespace SaturnValley.SharpF
         }
 
         // Lists
+        [Primitive("car")]
         public static Datum Car(List<Datum> args)
         {
             Pair p = (Pair)args[0];
             return p.car;
         }
+
+        [Primitive("cdr")]
         public static Datum Cdr(List<Datum> args)
         {
             Pair p = (Pair)args[0];
             return p.cdr;
         }
+        
+        [Primitive("cons")]
         public static Datum Cons(List<Datum> args)
         {
             return new Pair(args[0], args[1]);
         }
+
+        [Primitive("list")]
         public static Datum List(List<Datum> args)
         {
             Pair list = null;
@@ -59,11 +85,13 @@ namespace SaturnValley.SharpF
         }
 
         // Meta
+        [Primitive("load")]
         public static Datum Load(List<Datum> args)
         {
             String filename = (String)args[0];
             return LoadInternal(filename.val);
         }
+
         public static Datum LoadInternal(string filename)
         {
             Datum d = new Unspecified();
@@ -79,17 +107,23 @@ namespace SaturnValley.SharpF
             return d;
         }
 
-        public static void BindPrimitives(Environment e)
+        public static void BindPrimitives(Environment env)
         {
-            BindPrimitive("+", Add, e);
-            BindPrimitive("-", Subtract, e);
-            BindPrimitive("=", NumEqual, e);
-            BindPrimitive("<", LessThan, e);
-            BindPrimitive("car", Car, e);
-            BindPrimitive("cdr", Cdr, e);
-            BindPrimitive("cons", Cons, e);
-            BindPrimitive("list", List, e);
-            BindPrimitive("load", Load, e);
+            foreach (MethodInfo meth in typeof(Primitives).GetMethods())
+            {
+                foreach (Attribute attr in meth.GetCustomAttributes(false))
+                {
+                    PrimitiveAttribute primAttr = attr as PrimitiveAttribute;
+                    if (primAttr != null)
+                    {
+                        BindPrimitive(
+                            primAttr.name,
+                            (PrimitiveImplementation)Delegate.CreateDelegate(
+                                typeof(PrimitiveImplementation), meth),
+                            env);
+                    }
+                }
+            }
         }
 
         private static void BindPrimitive(string name,
