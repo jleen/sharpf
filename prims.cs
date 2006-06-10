@@ -21,9 +21,10 @@ namespace SaturnValley.SharpF
 
         public static void BindPrimitives(Environment e)
         {
+            // Arithmetic
             e.Bind(
                 new Symbol("+"),
-                new Primitive(delegate(Pair args, Environment env)
+                new Primitive(PrimitiveImplementation
                 {
                     int accum = 0;
                     while (args != null)
@@ -36,6 +37,32 @@ namespace SaturnValley.SharpF
                     return new Number(accum);
                 }));
             e.Bind(
+                new Symbol("-"),
+                new Primitive(delegate(Pair args, Environment env)
+                    {
+                        int i = ((Number)args.car).val;
+                        int j = ((Number)(((Pair)args.cdr).car)).val;
+                        return new Number(i - j);
+                    }));
+            e.Bind(
+                new Symbol("="),
+                new Primitive(delegate(Pair args, Environment env)
+                    {
+                        int i = ((Number)args.car).val;
+                        int j = ((Number)(((Pair)args.cdr).car)).val;
+                        return new Boolean(i == j);
+                    }));
+            e.Bind(
+                new Symbol("<"),
+                new Primitive(delegate(Pair args, Environment env)
+                    {
+                        int i = ((Number)args.car).val;
+                        int j = ((Number)(((Pair)args.cdr).car)).val;
+                        return new Boolean(i < j);
+                    }));
+
+            // Lists
+            e.Bind(
                 new Symbol("car"),
                 new Primitive(delegate(Pair args, Environment env)
                     {
@@ -47,6 +74,20 @@ namespace SaturnValley.SharpF
                     {
                         return ((Pair)(args.car)).cdr;
                     }));
+            e.Bind(
+                new Symbol("cons"),
+                new Primitive(delegate(Pair args, Environment env)
+                    {
+                        return new Pair(args.car, ((Pair)(args.cdr)).car);
+                    }));
+            e.Bind(
+                new Symbol("list"),
+                new Primitive(delegate(Pair args, Environment env)
+                    {
+                        return args;
+                    }));
+
+            // Meta
             e.Bind(
                 new Symbol("load"),
                 new Primitive(delegate(Pair args, Environment env)

@@ -84,6 +84,34 @@ namespace SaturnValley.SharpF
                                         call.arg = p.cdr;
                                         goto NextCall;
                                     }
+                                    case "if":
+                                    {
+                                        Pair clauses = p.cdr as Pair;
+                                        Datum test = clauses.car;
+                                        Datum conseq = ((Pair)clauses.cdr).car;
+                                        Datum alts = ((Pair)clauses.cdr).cdr;
+
+                                        Datum result =
+                                            Trampoline(new TrampCall(
+                                                TrampTarget.Eval,
+                                                test, env));
+
+                                        Boolean bool_res = result as Boolean;
+                                        if (bool_res != null &&
+                                            bool_res.val == false)
+                                        {
+                                            call.target =
+                                                TrampTarget.EvalSequence;
+                                            call.arg = alts;
+                                            goto NextCall;
+                                        }
+                                        else
+                                        {
+                                            call.target = TrampTarget.Eval;
+                                            call.arg = conseq;
+                                            goto NextCall;
+                                        }
+                                    }
                                     case "define":
                                     {
                                         Symbol name =
@@ -133,6 +161,12 @@ namespace SaturnValley.SharpF
                     
                     case TrampTarget.EvalSequence:
                     {
+                        if (null == call.arg)
+                        {
+                            call.target = TrampTarget.Continue;
+                            call.arg = new Pair(new Unspecified(), null);
+                        }
+
                         Pair exps = (Pair)call.arg;
                         Environment env = call.env;
 

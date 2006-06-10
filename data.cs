@@ -48,6 +48,16 @@ namespace SaturnValley.SharpF
             val = v;
         }
     }
+    
+    public class Boolean : Datum
+    {
+        public bool val;
+
+        public Boolean(bool v)
+        {
+            val = v;
+        }
+    }
 
     public class Closure : Datum
     {

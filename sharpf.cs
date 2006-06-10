@@ -46,14 +46,34 @@ namespace SaturnValley.SharpF
             {
                 Console.Write((a as Number).val.ToString());
             }
+            else if (a is Boolean)
+            {
+                if ((a as Boolean).val == true)
+                    Console.Write("#t");
+                else
+                    Console.Write("#f");
+            }
             else if (a is Pair)
             {
-                Pair p = a as Pair;
                 Console.Write("(");
-                Print(p.car);
-                Console.Write(" . ");
-                Print(p.cdr);
+                while (a is Pair)
+                {
+                    Pair p = a as Pair;
+                    Print(p.car);
+                    if (p.cdr != null)
+                        Console.Write(" ");
+                    a = p.cdr;
+                }
+                if (a != null)
+                {
+                    Console.Write(". ");
+                    Print(a);
+                }
                 Console.Write(")");
+            }
+            else if (a is Primitive)
+            {
+                Console.Write("#<primitive>");
             }
             else if (a is Closure)
             {
