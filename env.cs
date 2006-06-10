@@ -4,6 +4,8 @@ namespace SaturnValley.SharpF
 {
     public class Environment
     {
+        public static Environment Toplevel;
+
         private Environment parent;
         private Dictionary<string, Datum> bindings;
 

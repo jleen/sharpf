@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace SaturnValley.SharpF
 {
     public static class Evaluator
@@ -6,9 +8,7 @@ namespace SaturnValley.SharpF
         {
             Continue,
             Eval,
-            EvalSequence,
-            EvalList,
-            Apply
+            EvalSequence
         }
 
         public class TrampCall
@@ -134,24 +134,34 @@ namespace SaturnValley.SharpF
                             Datum func =
                                 Trampoline(new TrampCall(
                                     TrampTarget.Eval, p.car, env));
-                            Pair args =
-                                (Pair)Trampoline(new TrampCall(
-                                    TrampTarget.EvalList,
-                                    p.cdr, env));
+                            List<Datum> args = EvalList((Pair)p.cdr, env);
 
                             Primitive prim = func as Primitive;
                             if (prim != null)
                             {
                                 call.target = TrampTarget.Continue;
-                                call.arg = prim.implementation(args, env);
+                                call.arg = prim.implementation(args);
                                 goto NextCall;
                             }
 
-                            call.target = TrampTarget.Apply;
-                            call.arg = new Pair(func, args);
+                            // Apply
+
+                            Closure closure = (Closure)func;
+
+                            Environment new_env = new Environment(env);
+                            Pair paramlist = closure.formals;
+                            foreach (Datum arg in args)
+                            {
+                                new_env.Bind((Symbol)paramlist.car, arg);
+                                paramlist = (Pair)paramlist.cdr;
+                            }
+
+                            call.target = TrampTarget.EvalSequence;
+                            call.arg = closure.body;
+                            call.env = new_env;
                             goto NextCall;
                         }
-                        else
+                        else // Self-evaluating
                         {
                             call.target = TrampTarget.Continue;
                             call.arg = exp;
@@ -187,52 +197,6 @@ namespace SaturnValley.SharpF
                             goto NextCall;
                         }
                     }
-
-                    case TrampTarget.Apply:
-                    {
-                        Pair p = (Pair)call.arg;
-                        Environment parent = call.env;
-
-                        Closure func = (Closure)p.car;
-                        Pair args = (Pair)p.cdr;
-
-                        Environment env = new Environment(parent);
-                        Pair formals = func.formals;
-                        while (formals != null)
-                        {
-                            env.Bind((Symbol)formals.car, args.car);
-                            args = (Pair)args.cdr;
-                            formals = (Pair)formals.cdr;
-                        }
-
-                        call.target = TrampTarget.EvalSequence;
-                        call.arg = func.body;
-                        call.env = env;
-                        goto NextCall;
-                    }
-
-                    case TrampTarget.EvalList:
-                    {
-                        Pair exps = (Pair)call.arg;
-                        Environment env = call.env;
-
-                        if (exps == null)
-                        {
-                            call.target = TrampTarget.Continue;
-                            call.arg = null;
-                            goto NextCall;
-                        }
-                        else
-                        {
-                            call.target = TrampTarget.Continue;
-                            call.arg = new Pair(
-                                Trampoline(new TrampCall(
-                                    TrampTarget.Eval, exps.car, env)),
-                                Trampoline(new TrampCall(
-                                    TrampTarget.EvalList, exps.cdr, env)));
-                            goto NextCall;
-                        }
-                    }
                 }
 
             NextCall:
@@ -244,6 +208,20 @@ namespace SaturnValley.SharpF
             }
 
             return call.arg;
+        }
+
+        private static List<Datum> EvalList(Pair exps, Environment env)
+        {
+            List<Datum> vals = new List<Datum>();
+
+            while (exps != null)
+            {
+                vals.Add(Trampoline(new TrampCall(
+                    TrampTarget.Eval, exps.car, env)));
+                exps = (Pair)exps.cdr;
+            }
+
+            return vals;
         }
     }
 }

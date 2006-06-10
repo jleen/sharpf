@@ -7,8 +7,8 @@ namespace SaturnValley.SharpF
     {
         public static void Main(string[] args)
         {
-            Environment env = Environment.CreateDefaultEnvironment();
-            Primitives.Load("library.scm", env);
+            Environment.Toplevel = Environment.CreateDefaultEnvironment();
+            Primitives.LoadInternal("library.scm");
             System.Console.WriteLine("#f");
                 
             while (true)
@@ -19,7 +19,7 @@ namespace SaturnValley.SharpF
                                 Evaluator.TrampTarget.Eval,
                                 Read(new System.IO.StreamReader(
                                     Console.OpenStandardInput())),
-                                env)));
+                                Environment.Toplevel)));
                 System.Console.WriteLine();
             }
         }
@@ -73,7 +73,7 @@ namespace SaturnValley.SharpF
             }
             else if (a is Primitive)
             {
-                Console.Write("#<primitive>");
+                Console.Write("#<primitive " + (a as Primitive).name + ">");
             }
             else if (a is Closure)
             {

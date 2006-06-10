@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace SaturnValley.SharpF
 {
     public class Datum
@@ -73,15 +75,16 @@ namespace SaturnValley.SharpF
         }
     }
 
-    public delegate Datum PrimitiveImplementation(
-        Pair args, Environment env);
+    public delegate Datum PrimitiveImplementation(List<Datum> args);
 
     public class Primitive : Datum
     {
+        public string name;
         public PrimitiveImplementation implementation;
 
-        public Primitive(PrimitiveImplementation i)
+        public Primitive(string n, PrimitiveImplementation i)
         {
+            name = n;
             implementation = i;
         }
     }
