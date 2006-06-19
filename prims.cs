@@ -21,37 +21,74 @@ namespace SaturnValley.SharpF
         [Primitive("+")]
         public static Datum Add(List<Datum> args)
         {
-            int accum = 0;
+            int num = 0;
+            int denom = 1;
             foreach (Datum d in args)
             {
-                Number n = (Number)d;
-                accum += n.val;
+                Rational n = (Rational)d;
+                int oldDenom = denom;
+                num *= n.denom;
+                denom *= n.denom;
+                num += oldDenom * n.num;
             }
-            return new Number(accum);
+            return new Rational(num, denom);
         }
 
         [Primitive("-")]
         public static Datum Subtract(List<Datum> args)
         {
-            Number i = (Number)args[0];
-            Number j = (Number)args[1];
-            return new Number(i.val - j.val);
+            Rational n = (Rational)args[0];
+            if (args.Count == 1)
+            {
+                return new Rational(-n.num, n.denom);
+            }
+            else
+            {
+                n.num = -n.num;
+                Rational res = (Rational)Add(args);
+                res.num = -res.num;
+                return res;
+            }
+        }
+
+        [Primitive("*")]
+        public static Datum Add(List<Datum> args)
+        {
+            int num = 1;
+            int denom = 1;
+            foreach (Datum d in args)
+            {
+                Rational n = (Rational)d;
+                num *= n.num;
+                denom *= n.denom;
+            }
+            return new Rational(num, denom);
+        }
+
+        [Primitive("/")]
+        public static Datum Subtract(List<Datum> args)
+        {
+            Rational n = (Rational)args[0];
+            n.Reciprocal();
+            Rational res = (Rational)Add(args);
+            res.Reciprocal();
+            return res;
         }
 
         [Primitive("=")]
         public static Datum NumEqual(List<Datum> args)
         {
-            Number i = (Number)args[0];
-            Number j = (Number)args[1];
-            return new Boolean(i.val == j.val);
+            Rational i = (Rational)args[0];
+            Rational j = (Rational)args[1];
+            return new Boolean(i.num == j.num && i.denom == j.denom);
         }
 
         [Primitive("<")]
         public static Datum LessThan(List<Datum> args)
         {
-            Number i = (Number)args[0];
-            Number j = (Number)args[1];
-            return new Boolean(i.val < j.val);
+            Rational i = (Rational)args[0];
+            Rational j = (Rational)args[1];
+            return new Boolean(i.num * j.denom < j.num * i.denom);
         }
 
         // Lists

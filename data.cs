@@ -43,14 +43,61 @@ namespace SaturnValley.SharpF
 
     public class Number : Datum
     {
+    }
+
+    public class Integer : Number
+    {
         public int val;
 
-        public Number(int v)
+        public Integer(int v)
         {
             val = v;
         }
     }
-    
+
+    public class Rational : Number
+    {
+        public int num;
+        public int denom;
+
+        private static int Gcd(int i, int j)
+        {
+            if (i < 0)
+                i *= -1;
+
+            while (i != j)
+            {
+                if (i > j)
+                    i = i - j;
+                else
+                    j = j - i;
+            }
+
+            return i;
+        }
+
+        public void Reciprocal()
+        {
+            int swap = num;
+            denom = num;
+            num = denom;
+        }
+
+        private void Reduce()
+        {
+            int gcd = Gcd(num, denom);
+            num /= gcd;
+            denom /= gcd;
+        }
+
+        public Rational(int n, int d)
+        {
+            num = n;
+            denom = d;
+            this.Reduce();
+        }
+    }
+
     public class Boolean : Datum
     {
         public bool val;

@@ -42,9 +42,19 @@ namespace SaturnValley.SharpF
             {
                 Console.Write((a as Symbol).name);
             }
-            else if (a is Number)
+            else if (a is Integer)
             {
-                Console.Write((a as Number).val.ToString());
+                Console.Write((a as Integer).val.ToString());
+            }
+            else if (a is Rational)
+            {
+                Rational r = (Rational)a;
+                Console.Write(r.num.ToString());
+                if (r.denom != 1)
+                {
+                    Console.Write("/");
+                    Console.Write(r.denom.ToString());
+                }
             }
             else if (a is Boolean)
             {

@@ -10,7 +10,8 @@ namespace SaturnValley.SharpF
         Whitespace,
         Identifier,
         Boolean,
-        Number,
+        Integer,
+        Rational,
         Character,
         String,
         Open,
@@ -59,8 +60,10 @@ namespace SaturnValley.SharpF
                           new Regex(@"^([" + symbolChars + @"]" +
                                     @"[" + symbolChars + subseqChars + @"]*" +
                                     @"|\+|-|\.\.\.)" + wordBoundary)),
-            new TokenData(TokenType.Number,
+            new TokenData(TokenType.Integer,
                           new Regex("^[0-9]+" + wordBoundary)),
+            new TokenData(TokenType.Rational,
+                          new Regex("^[0-9]+/[0-9]+" + wordBoundary)),
             new TokenData(TokenType.Open,
                           new Regex(@"^\(")),
             new TokenData(TokenType.Close,

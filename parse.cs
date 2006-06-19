@@ -27,8 +27,15 @@ namespace SaturnValley.SharpF
                 case TokenType.Identifier: {
                     return new Symbol(token.text.ToLowerInvariant());
                 }
-                case TokenType.Number: {
-                    return new Number(System.Int32.Parse(token.text));
+                case TokenType.Integer: {
+                    // TODO: BOGUS!
+                    return new Rational(System.Int32.Parse(token.text), 1);
+                }
+                case TokenType.Rational: {
+                    string[] nums = token.text.Split(new char[] { '/' }, 2);
+                    int num = System.Int32.Parse(nums[0]);
+                    int denom = System.Int32.Parse(nums[1]);
+                    return new Rational(num, denom);
                 }
                 case TokenType.Open: {
                     return ParseList(tokens);
