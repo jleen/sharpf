@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace SaturnValley.SharpF
 {
@@ -8,7 +9,7 @@ namespace SaturnValley.SharpF
         public static void Main(string[] args)
         {
             Environment.Toplevel = Environment.CreateDefaultEnvironment();
-            Primitives.LoadInternal("library.scm");
+            //Primitives.LoadInternal("library.scm");
             System.Console.WriteLine("#f");
                 
             while (true)
@@ -30,6 +31,18 @@ namespace SaturnValley.SharpF
                 Lexer.Lex(sr).GetEnumerator();
             tokens.MoveNext();
             return Parser.Parse(tokens);
+        }
+
+        [Conditional("TRACE")]
+        public static void TracePrint(Datum a)
+        {
+            Print(a);
+        }
+
+        [Conditional("TRACE")]
+        public static void Trace(string s)
+        {
+            System.Console.Write(s);
         }
 
         public static void Print(Datum a)

@@ -52,7 +52,7 @@ namespace SaturnValley.SharpF
         }
 
         [Primitive("*")]
-        public static Datum Add(List<Datum> args)
+        public static Datum Multiply(List<Datum> args)
         {
             int num = 1;
             int denom = 1;
@@ -66,7 +66,7 @@ namespace SaturnValley.SharpF
         }
 
         [Primitive("/")]
-        public static Datum Subtract(List<Datum> args)
+        public static Datum Divide(List<Datum> args)
         {
             Rational n = (Rational)args[0];
             n.Reciprocal();
