@@ -37,6 +37,13 @@ namespace SaturnValley.SharpF
         public static void TracePrint(Datum a)
         {
             Print(a);
+            string hash;
+            if (a == null)
+                hash = "null";
+            else
+                hash = a.GetHashCode().ToString();
+
+            System.Console.Write("{" + hash + "}");
         }
 
         [Conditional("TRACE")]
@@ -62,11 +69,11 @@ namespace SaturnValley.SharpF
             else if (a is Rational)
             {
                 Rational r = (Rational)a;
-                Console.Write(r.num.ToString());
-                if (r.denom != 1)
+                Console.Write(r.Num.ToString());
+                if (r.Denom != 1)
                 {
                     Console.Write("/");
-                    Console.Write(r.denom.ToString());
+                    Console.Write(r.Denom.ToString());
                 }
             }
             else if (a is Boolean)

@@ -21,17 +21,17 @@ namespace SaturnValley.SharpF
         [Primitive("+")]
         public static Datum Add(List<Datum> args)
         {
-            int num = 0;
-            int denom = 1;
+            int Num = 0;
+            int Denom = 1;
             foreach (Datum d in args)
             {
                 Rational n = (Rational)d;
-                int oldDenom = denom;
-                num *= n.denom;
-                denom *= n.denom;
-                num += oldDenom * n.num;
+                int oldDenom = Denom;
+                Num *= n.Denom;
+                Denom *= n.Denom;
+                Num += oldDenom * n.Num;
             }
-            return new Rational(num, denom);
+            return new Rational(Num, Denom);
         }
 
         [Primitive("-")]
@@ -40,29 +40,28 @@ namespace SaturnValley.SharpF
             Rational n = (Rational)args[0];
             if (args.Count == 1)
             {
-                return new Rational(-n.num, n.denom);
+                return new Rational(-n.Num, n.Denom);
             }
             else
             {
-                n.num = -n.num;
+                args[0] = new Rational(-n.Num, n.Denom);
                 Rational res = (Rational)Add(args);
-                res.num = -res.num;
-                return res;
+                return new Rational(-res.Num, res.Denom);
             }
         }
 
         [Primitive("*")]
         public static Datum Multiply(List<Datum> args)
         {
-            int num = 1;
-            int denom = 1;
+            int Num = 1;
+            int Denom = 1;
             foreach (Datum d in args)
             {
                 Rational n = (Rational)d;
-                num *= n.num;
-                denom *= n.denom;
+                Num *= n.Num;
+                Denom *= n.Denom;
             }
-            return new Rational(num, denom);
+            return new Rational(Num, Denom);
         }
 
         [Primitive("/")]
@@ -80,7 +79,7 @@ namespace SaturnValley.SharpF
         {
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
-            return new Boolean(i.num == j.num && i.denom == j.denom);
+            return new Boolean(i.Num == j.Num && i.Denom == j.Denom);
         }
 
         [Primitive("<")]
@@ -88,7 +87,7 @@ namespace SaturnValley.SharpF
         {
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
-            return new Boolean(i.num * j.denom < j.num * i.denom);
+            return new Boolean(i.Num * j.Denom < j.Num * i.Denom);
         }
 
         // Lists

@@ -57,8 +57,11 @@ namespace SaturnValley.SharpF
 
     public class Rational : Number
     {
-        public int num;
-        public int denom;
+        private int num;
+        private int denom;
+
+        public int Num { get { return num; } }
+        public int Denom { get { return denom; } }
 
         private static int Gcd(int i, int j)
         {
@@ -85,6 +88,12 @@ namespace SaturnValley.SharpF
 
         private void Reduce()
         {
+            if (num == 0)
+            {
+                denom = 1;
+                return;
+            }
+
             int gcd = Gcd(num, denom);
             num /= gcd;
             denom /= gcd;
