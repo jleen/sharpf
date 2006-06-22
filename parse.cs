@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -28,13 +29,29 @@ namespace SaturnValley.SharpF
                     return new Symbol(token.text.ToLowerInvariant());
                 }
                 case TokenType.Integer: {
-                    // TODO: BOGUS!
-                    return new Rational(System.Int32.Parse(token.text), 1);
+                    // BOGUS!
+                    try
+                    {
+                        return new Rational(Int32.Parse(token.text), 1);
+                    }
+                    catch (OverflowException)
+                    {
+                        throw new BogusArithmeticException(token.text);
+                    }
                 }
                 case TokenType.Rational: {
                     string[] nums = token.text.Split(new char[] { '/' }, 2);
-                    int num = System.Int32.Parse(nums[0]);
-                    int denom = System.Int32.Parse(nums[1]);
+                    int num;
+                    int denom;
+                    try
+                    {
+                        num = Int32.Parse(nums[0]);
+                        denom = Int32.Parse(nums[1]);
+                    }
+                    catch (OverflowException)
+                    {
+                        throw new BogusArithmeticException(token.text);
+                    }
                     return new Rational(num, denom);
                 }
                 case TokenType.Open: {

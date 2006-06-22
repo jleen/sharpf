@@ -11,7 +11,7 @@ namespace SaturnValley.SharpF
 
         public Environment(Environment p)
         {
-            Shell.Trace("CREATING ENVIRONMENT " +
+            Shell.Trace("Creating environment " +
                         this.GetHashCode().ToString() + "\n");
             parent = p;
             bindings = new Dictionary<string, Datum>();
@@ -19,9 +19,9 @@ namespace SaturnValley.SharpF
 
         public void Bind(Symbol sym, Datum value)
         {
-            Shell.Trace("BINDING " + sym.name + "\n   with ");
-            Shell.TracePrint(value);
-            Shell.Trace("\n   in " + this.GetHashCode().ToString() + "\n");
+            Shell.Trace("Binding name ", sym,
+                        "\nto value ", value,
+                        "\nin environment ", this.GetHashCode());
             bindings[sym.name] = value;
         }
 
@@ -30,19 +30,17 @@ namespace SaturnValley.SharpF
             Environment env = this;
             while (env != null)
             {
-                Shell.Trace("LOOKING UP " + sym.name + "\n   in " +
-                            env.GetHashCode().ToString() + "\n");
+                Shell.Trace("Looking up name ", sym,
+                            "\nin environment", env.GetHashCode());
                 if (env.bindings.ContainsKey(sym.name))
                 {
-                    Shell.Trace("FOUND ");
-                    Shell.TracePrint(env.bindings[sym.name]);
-                    Shell.Trace("\n");
+                    Shell.Trace("Found value ", env.bindings[sym.name]);
                     return env.bindings[sym.name];
                 }
                 env = env.parent;
             }
 
-            throw new System.Exception("Unable to look up " + sym.name);
+            throw new UnboundSymbolException(sym);
         }
 
         public static Environment CreateDefaultEnvironment()

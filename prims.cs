@@ -17,6 +17,24 @@ namespace SaturnValley.SharpF
 
     static class Primitives
     {
+        public static void RequireMultiArgs(
+            string who, List<Datum> what, int n, Type t)
+        {
+            if (what.Count < n)
+                throw new MissingArgumentException(who, what.Count, n);
+
+            int i = 1;
+            foreach (Datum arg in what)
+            {
+                if (arg != null &&
+                    !t.IsAssignableFrom(arg.GetType()))
+                {
+                    throw new ArgumentTypeException(who, i, arg.GetType(), t);
+                }
+                ++i;
+            }
+        }
+
         // Arithmetic
         [Primitive("+")]
         public static Datum Add(List<Datum> args)
@@ -37,6 +55,8 @@ namespace SaturnValley.SharpF
         [Primitive("-")]
         public static Datum Subtract(List<Datum> args)
         {
+            RequireMultiArgs("-", args, 1, typeof(Number));
+
             Rational n = (Rational)args[0];
             if (args.Count == 1)
             {
@@ -128,6 +148,14 @@ namespace SaturnValley.SharpF
         }
 
         // Meta
+        [Primitive("quit")]
+        public static Datum Quit(List<Datum> args)
+        {
+            Console.WriteLine("\nENTER PREFIX (PRESS \"RETURN\" TO ACCEPT)");
+            System.Environment.Exit(0);
+            return new Unspecified();
+        }
+
         [Primitive("load")]
         public static Datum Load(List<Datum> args)
         {
@@ -141,9 +169,9 @@ namespace SaturnValley.SharpF
             using (StreamReader sr = new StreamReader(filename))
             {
                 while (sr.Peek() != -1)
-                    d = Evaluator.Trampoline(
-                        new Evaluator.TrampCall(
-                            Evaluator.TrampTarget.Eval,
+                    d = Evaluator.Act(
+                        new Evaluator.Activation(
+                            Evaluator.Actor.Eval,
                             Shell.Read(sr),
                             Environment.Toplevel));
             }

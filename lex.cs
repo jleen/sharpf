@@ -6,7 +6,6 @@ namespace SaturnValley.SharpF
 {
     enum TokenType
     {
-        Error,
         Whitespace,
         Identifier,
         Boolean,
@@ -94,9 +93,7 @@ namespace SaturnValley.SharpF
                         }
                     }
 
-                    yield return new Token(TokenType.Error,
-                                           line.Substring(pos));
-                    yield break;
+                    throw new TokenException(line.Substring(pos));
                 okay:;
                 }
             }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 namespace SaturnValley.SharpF
 {
@@ -9,19 +10,28 @@ namespace SaturnValley.SharpF
         public static void Main(string[] args)
         {
             Environment.Toplevel = Environment.CreateDefaultEnvironment();
-            //Primitives.LoadInternal("library.scm");
+            Primitives.LoadInternal("library.scm");
             System.Console.WriteLine("#f");
                 
             while (true)
             {
-                Print(
-                    Evaluator.Trampoline(
-                        new Evaluator.TrampCall(
-                                Evaluator.TrampTarget.Eval,
+                Console.Write("\n]");
+                try
+                {
+                    Print(
+                        Evaluator.Act(
+                            new Evaluator.Activation(
+                                Evaluator.Actor.Eval,
                                 Read(new System.IO.StreamReader(
                                     Console.OpenStandardInput())),
                                 Environment.Toplevel)));
-                System.Console.WriteLine();
+                }
+                catch (SharpFException e)
+                {
+                    Console.Write("Oops!  " + e.Message);
+                }
+
+                Console.WriteLine();
             }
         }
 
@@ -34,98 +44,120 @@ namespace SaturnValley.SharpF
         }
 
         [Conditional("TRACE")]
-        public static void TracePrint(Datum a)
+        public static void Trace(params object[] objs)
         {
-            Print(a);
-            string hash;
-            if (a == null)
-                hash = "null";
-            else
-                hash = a.GetHashCode().ToString();
+            Console.WriteLine(new System.String('=', 78));
 
-            System.Console.Write("{" + hash + "}");
-        }
+            foreach (Object o in objs)
+            {
+                if (o is string)
+                {
+                    Console.Write((string)o);
+                }
+                else if (o is Datum)
+                {
+                    Print((Datum)o);
+                    string hash;
+                    if (o == null)
+                        hash = "null";
+                    else
+                        hash = o.GetHashCode().ToString();
 
-        [Conditional("TRACE")]
-        public static void Trace(string s)
-        {
-            System.Console.Write(s);
+                    Console.Write("{" + hash + "}");
+                }
+                else
+                {
+                    if (o == null)
+                        Console.Write("{null}");
+                    else
+                        Console.Write(o.ToString());
+                }
+            }
+
+            Console.WriteLine();
         }
 
         public static void Print(Datum a)
         {
+            Console.Write(Format(a));
+        }
+
+        public static string Format(Datum a)
+        {
             if (a == null)
             {
-                Console.Write("()");
+                return "()";
             }
             else if (a is Symbol)
             {
-                Console.Write((a as Symbol).name);
+                return (a as Symbol).name;
             }
             else if (a is Integer)
             {
-                Console.Write((a as Integer).val.ToString());
+                return (a as Integer).val.ToString();
             }
             else if (a is Rational)
             {
                 Rational r = (Rational)a;
-                Console.Write(r.Num.ToString());
+                StringBuilder fmt = new StringBuilder(r.Num.ToString());
                 if (r.Denom != 1)
                 {
-                    Console.Write("/");
-                    Console.Write(r.Denom.ToString());
+                    fmt.Append("/");
+                    fmt.Append(r.Denom.ToString());
                 }
+                return fmt.ToString();
             }
             else if (a is Boolean)
             {
                 if ((a as Boolean).val == true)
-                    Console.Write("#t");
+                    return "#t";
                 else
-                    Console.Write("#f");
+                    return "#f";
             }
             else if (a is Pair)
             {
-                Console.Write("(");
+                StringBuilder fmt = new StringBuilder("(");
                 while (a is Pair)
                 {
                     Pair p = a as Pair;
-                    Print(p.car);
+                    fmt.Append(Format(p.car));
                     if (p.cdr != null)
-                        Console.Write(" ");
+                        fmt.Append(" ");
                     a = p.cdr;
                 }
                 if (a != null)
                 {
-                    Console.Write(". ");
-                    Print(a);
+                    fmt.Append(". ");
+                    fmt.Append(Format(a));
                 }
-                Console.Write(")");
+                fmt.Append(")");
+                return fmt.ToString();
             }
             else if (a is Primitive)
             {
-                Console.Write("#<primitive " + (a as Primitive).name + ">");
+                return "#<primitive " + (a as Primitive).name + ">";
             }
             else if (a is Closure)
             {
                 Closure c = a as Closure;
-                Console.Write("#<closure ");
-                Print(c.formals);
-                Console.Write(" ");
-                Print(c.body);
-                Console.Write(">");
+                return "#<closure " + Format(c.formals) +
+                    " " + Format(c.body) + ">";
+            }
+            else if (a is Continuation)
+            {
+                return "#<continuation " + a.GetHashCode() + ">";
             }
             else if (a is Unspecified)
             {
-                Console.Write("#<unspecified>");
+                return "#<unspecified>";
             }
             else if (a is SharpF.String)
             {
-                Console.Write("\"" + (a as SharpF.String).val + "\"");
+                return "\"" + (a as SharpF.String).val + "\"";
             }
             else
             {
-                Console.Write("#<unprintable: " +
-                                  a.ToString() + ">");
+                return "#<unprintable: " + a.ToString() + ">";
             }
         }
     }
