@@ -120,6 +120,13 @@ namespace SaturnValley.SharpF
             return list;
         }
 
+        // Wiiiii
+        [Primitive("call-with-current-continuation")]
+        public static Datum CallCC(List<Datum> args)
+        {
+            return new Unspecified();
+        }
+
         // Meta
         [Primitive("load")]
         public static Datum Load(List<Datum> args)

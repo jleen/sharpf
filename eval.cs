@@ -203,15 +203,49 @@ namespace SaturnValley.SharpF
                         Datum func = args[0];
                         args.RemoveAt(0);
 
+                        // Primitive
+
                         Primitive prim = func as Primitive;
                         if (prim != null)
                         {
+                            // ouch
+                            if (prim.name == "call-with-current-continuation")
+                            {
+                                Continuation current =
+                                    new Continuation(call.next);
+                                Datum recip = args[0];
+                                call.target = TrampTarget.Continue;
+                                call.arg =
+                                    new Pair(current, new Pair(recip, null));
+                                call.next = new TrampCall(
+                                    TrampTarget.ExecuteApply,
+                                    null,
+                                    env,
+                                    call.next);
+                                goto NextCall;
+                            }
+                            else
+                            {
+                                call.target = TrampTarget.Continue;
+                                call.arg = prim.implementation(args);
+                                goto NextCall;
+                            }
+                        }
+
+                        // Continuation
+
+                        Continuation cont = func as Continuation;
+                        if (cont != null)
+                        {
                             call.target = TrampTarget.Continue;
-                            call.arg = prim.implementation(args);
+                            call.arg = args[0];
+                            // We cheerfully blow away the existing value
+                            // of call.next, because this is a goto.
+                            call.next = cont.call;
                             goto NextCall;
                         }
 
-                        // Apply
+                        // Closure
 
                         Closure closure = (Closure)func;
 

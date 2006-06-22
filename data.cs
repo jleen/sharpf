@@ -117,6 +117,16 @@ namespace SaturnValley.SharpF
         }
     }
 
+    public class Continuation : Datum
+    {
+        public Evaluator.TrampCall call;
+
+        public Continuation(Evaluator.TrampCall c)
+        {
+            call = c;
+        }
+    }
+
     public class Closure : Datum
     {
         public Environment env;
