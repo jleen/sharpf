@@ -16,15 +16,15 @@ namespace SaturnValley.SharpF
             ExecuteDefine
         }
 
-        public class Activation
+        public class Action
         {
             public Actor target;
             public Datum arg;
             public Environment env;
-            public Activation next;
+            public Action next;
             public Datum result;
 
-            public Activation(Actor t, Datum a, Environment e)
+            public Action(Actor t, Datum a, Environment e)
             {
                 target = t;
                 arg = a;
@@ -32,8 +32,8 @@ namespace SaturnValley.SharpF
                 next = null;
             }
 
-            public Activation(
-                Actor t, Datum a, Environment e, Activation n)
+            public Action(
+                Actor t, Datum a, Environment e, Action n)
             {
                 target = t;
                 arg = a;
@@ -42,7 +42,7 @@ namespace SaturnValley.SharpF
             }
         }
 
-        public static Datum Act(Activation call)
+        public static Datum Act(Action call)
         {
             while (call.target != Actor.Continue)
             {
@@ -114,7 +114,7 @@ namespace SaturnValley.SharpF
                                             call.arg = test;
                                             call.env = env;
 
-                                            call.next = new Activation(
+                                            call.next = new Action(
                                                 Actor.ExecuteIf,
                                                 new Pair(conseq, alts),
                                                 env,
@@ -124,22 +124,43 @@ namespace SaturnValley.SharpF
                                         }
                                         case "define":
                                         {
-                                            Symbol name =
-                                                (Symbol)((Pair)p.cdr).car;
-                                            Datum val_exp =
-                                                ((Pair)((Pair)p.cdr).cdr).car;
+                                            Datum what = ((Pair)p.cdr).car;
+                                            Symbol name;
+                                            if (what is Symbol)
+                                            {
+                                                name =
+                                                    (Symbol)what;
+                                                Datum val_exp =
+                                                    ((Pair)
+                                                     ((Pair)p.cdr).cdr).car;
 
-                                            call.target = Actor.Eval;
-                                            call.arg = val_exp;
-                                            call.env = env;
+                                                call.target = Actor.Eval;
+                                                call.arg = val_exp;
+                                                call.env = env;
+                                            }
+                                            else
+                                            {
+                                                name = (Symbol)
+                                                    Car(what);
+                                                Pair formals = (Pair)
+                                                    Cdr(what);
+                                                Datum body =
+                                                    Cdr(Cdr(p));
 
-                                            call.next = new Activation(
+                                                call.target =
+                                                    Actor.Continue;
+                                                call.arg = new Closure(
+                                                    env, formals, body);
+                                            }
+
+                                            call.next = new Action(
                                                 Actor.ExecuteDefine,
                                                 name,
                                                 env,
                                                 call.next);
 
                                             goto NextCall;
+
                                         }
                                     }
                                 }
@@ -157,7 +178,7 @@ namespace SaturnValley.SharpF
                             call.arg = new Pair(p, null);
                             call.env = env;
                             
-                            call.next = new Activation(
+                            call.next = new Action(
                                 Actor.ExecuteApply,
                                 null,
                                 env,
@@ -192,7 +213,7 @@ namespace SaturnValley.SharpF
                         {
                             call.target = Actor.Eval;
                             call.arg = exps.car;
-                            call.next = new Activation(
+                            call.next = new Action(
                                 Actor.EvalList,
                                 new Pair(exps.cdr, acc),
                                 call.env,
@@ -232,7 +253,7 @@ namespace SaturnValley.SharpF
                                 call.target = Actor.Continue;
                                 call.arg =
                                     new Pair(current, new Pair(recip, null));
-                                call.next = new Activation(
+                                call.next = new Action(
                                     Actor.ExecuteApply,
                                     null,
                                     env,
@@ -341,7 +362,7 @@ namespace SaturnValley.SharpF
                             call.target = Actor.Eval;
                             call.arg = exps.car;
                             call.env = env;
-                            call.next = new Activation(
+                            call.next = new Action(
                                 Actor.EvalSequence,
                                 exps.cdr,
                                 env,
@@ -368,6 +389,16 @@ NextCall:
 
             Shell.Trace("Returning...\n");
             return call.arg;
+        }
+
+        public static Datum Car(Datum p)
+        {
+            return ((Pair)p).car;
+        }
+
+        public static Datum Cdr(Datum p)
+        {
+            return ((Pair)p).cdr;
         }
     }
 }

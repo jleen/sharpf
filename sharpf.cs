@@ -20,7 +20,7 @@ namespace SaturnValley.SharpF
                 {
                     Print(
                         Evaluator.Act(
-                            new Evaluator.Activation(
+                            new Evaluator.Action(
                                 Evaluator.Actor.Eval,
                                 Read(new System.IO.StreamReader(
                                     Console.OpenStandardInput())),

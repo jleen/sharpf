@@ -119,9 +119,9 @@ namespace SaturnValley.SharpF
 
     public class Continuation : Datum
     {
-        public Evaluator.Activation call;
+        public Evaluator.Action call;
 
-        public Continuation(Evaluator.Activation c)
+        public Continuation(Evaluator.Action c)
         {
             call = c;
         }

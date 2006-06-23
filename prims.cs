@@ -170,7 +170,7 @@ namespace SaturnValley.SharpF
             {
                 while (sr.Peek() != -1)
                     d = Evaluator.Act(
-                        new Evaluator.Activation(
+                        new Evaluator.Action(
                             Evaluator.Actor.Eval,
                             Shell.Read(sr),
                             Environment.Toplevel));
