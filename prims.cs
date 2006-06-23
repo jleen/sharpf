@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace SaturnValley.SharpF
 {
@@ -172,6 +173,31 @@ namespace SaturnValley.SharpF
             for (int i = args.Count - 1; i>= 0; i--)
                 list = new Pair(args[i], list);
             return list;
+        }
+
+        // Strings
+        [Primitive("string-append")]
+        public static Datum StringAppend(List<Datum> args)
+        {
+            RequireMultiArgs("string-append", args, 0, typeof(String));
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (Datum d in args)
+            {
+                String s = (String)d;
+                sb.Append(s.val);
+            }
+
+            return new String(sb.ToString());
+        }
+
+        [Primitive("number->string")]
+        public static Datum NumberToString(List<Datum> args)
+        {
+            RequireArgs("number->string", args, typeof(Number));
+
+            return new String(Shell.Format(args[0]));
         }
 
         // Display
