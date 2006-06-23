@@ -7,6 +7,4 @@ cond
 round
 map
 let
-display
-newline
 null?

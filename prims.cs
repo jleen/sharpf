@@ -35,10 +35,30 @@ namespace SaturnValley.SharpF
             }
         }
 
+        public static void RequireArgs(
+            string who, List<Datum> what, params Type[] types)
+        {
+            if (what.Count != types.Length)
+                throw new MissingArgumentException(
+                    who, what.Count, types.Length);
+
+            for (int i = 0; i < types.Length; i++)
+            {
+                if (what[i] != null &&
+                    !types[i].IsAssignableFrom(what[i].GetType()))
+                {
+                    throw new ArgumentTypeException(
+                        who, i + 1, what[i].GetType(), types[i]);
+                }
+            }
+        }
+
         // Arithmetic
         [Primitive("+")]
         public static Datum Add(List<Datum> args)
         {
+            RequireMultiArgs("+", args, 0, typeof(Number));
+
             int Num = 0;
             int Denom = 1;
             foreach (Datum d in args)
@@ -73,6 +93,8 @@ namespace SaturnValley.SharpF
         [Primitive("*")]
         public static Datum Multiply(List<Datum> args)
         {
+            RequireMultiArgs("*", args, 0, typeof(Number));
+
             int Num = 1;
             int Denom = 1;
             foreach (Datum d in args)
@@ -87,6 +109,8 @@ namespace SaturnValley.SharpF
         [Primitive("/")]
         public static Datum Divide(List<Datum> args)
         {
+            RequireMultiArgs("/", args, 1, typeof(Number));
+
             Rational n = (Rational)args[0];
             n.Reciprocal();
             Rational res = (Rational)Add(args);
@@ -97,6 +121,8 @@ namespace SaturnValley.SharpF
         [Primitive("=")]
         public static Datum NumEqual(List<Datum> args)
         {
+            RequireArgs("=", args, typeof(Number), typeof(Number));
+
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
             return new Boolean(i.Num == j.Num && i.Denom == j.Denom);
@@ -105,6 +131,8 @@ namespace SaturnValley.SharpF
         [Primitive("<")]
         public static Datum LessThan(List<Datum> args)
         {
+            RequireArgs("<", args, typeof(Number), typeof(Number));
+
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
             return new Boolean(i.Num * j.Denom < j.Num * i.Denom);
@@ -114,6 +142,8 @@ namespace SaturnValley.SharpF
         [Primitive("car")]
         public static Datum Car(List<Datum> args)
         {
+            RequireArgs("car", args, typeof(Pair));
+
             Pair p = (Pair)args[0];
             return p.car;
         }
@@ -121,6 +151,8 @@ namespace SaturnValley.SharpF
         [Primitive("cdr")]
         public static Datum Cdr(List<Datum> args)
         {
+            RequireArgs("cdr", args, typeof(Pair));
+
             Pair p = (Pair)args[0];
             return p.cdr;
         }
@@ -128,6 +160,8 @@ namespace SaturnValley.SharpF
         [Primitive("cons")]
         public static Datum Cons(List<Datum> args)
         {
+            RequireArgs("car", args, typeof(Datum), typeof(Datum));
+
             return new Pair(args[0], args[1]);
         }
 
@@ -140,6 +174,33 @@ namespace SaturnValley.SharpF
             return list;
         }
 
+        // Display
+        [Primitive("display")]
+        public static Datum Display(List<Datum> args)
+        {
+            RequireArgs("display", args, typeof(Datum));
+
+            String s = args[0] as String;
+            if (s != null)
+            {
+                Console.Write(s.val);
+            }
+            else
+            {
+                Shell.Print(args[0]);
+            }
+            return new Unspecified();
+        }
+
+        [Primitive("newline")]
+        public static Datum Newline(List<Datum> args)
+        {
+            RequireArgs("newline", args);
+
+            Console.WriteLine();
+            return new Unspecified();
+        }
+            
         // Wiiiii
         [Primitive("call-with-current-continuation")]
         public static Datum CallCC(List<Datum> args)
@@ -151,6 +212,8 @@ namespace SaturnValley.SharpF
         [Primitive("quit")]
         public static Datum Quit(List<Datum> args)
         {
+            RequireArgs("quit", args);
+
             Console.WriteLine("\nENTER PREFIX (PRESS \"RETURN\" TO ACCEPT)");
             System.Environment.Exit(0);
             return new Unspecified();
@@ -159,6 +222,8 @@ namespace SaturnValley.SharpF
         [Primitive("load")]
         public static Datum Load(List<Datum> args)
         {
+            RequireArgs("load", args, typeof(String));
+
             String filename = (String)args[0];
             return LoadInternal(filename.val);
         }

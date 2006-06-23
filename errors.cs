@@ -85,7 +85,7 @@ namespace SaturnValley.SharpF
             get
             {
                 return func + " expects " +
-                    numRequired.ToString() + " arguments, but only " +
+                    numRequired.ToString() + " arguments, but " +
                     numSupplied.ToString() + " were supplied.";
             }
         }
