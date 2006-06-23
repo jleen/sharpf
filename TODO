@@ -1,3 +1,4 @@
+call-cc bug thanks to apply cheesiness
 quotient
 remainder
 let*
@@ -5,4 +6,3 @@ cond
 round
 map
 let
-null?

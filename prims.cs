@@ -18,6 +18,21 @@ namespace SaturnValley.SharpF
 
     static class Primitives
     {
+        public static void CheckType(string who, int i, Datum arg, Type t)
+        {
+            if (arg != null &&
+                !t.IsAssignableFrom(arg.GetType()))
+            {
+                throw new ArgumentTypeException(who, i, arg.GetType(), t);
+            }
+
+            if (arg == null &&
+                !t.IsAssignableFrom(typeof(Datum)))
+            {
+                throw new ArgumentTypeException(who, i, null, t);
+            }
+        }
+
         public static void RequireMultiArgs(
             string who, List<Datum> what, int n, Type t)
         {
@@ -27,11 +42,7 @@ namespace SaturnValley.SharpF
             int i = 1;
             foreach (Datum arg in what)
             {
-                if (arg != null &&
-                    !t.IsAssignableFrom(arg.GetType()))
-                {
-                    throw new ArgumentTypeException(who, i, arg.GetType(), t);
-                }
+                CheckType(who, i, arg, t);
                 ++i;
             }
         }
@@ -45,12 +56,7 @@ namespace SaturnValley.SharpF
 
             for (int i = 0; i < types.Length; i++)
             {
-                if (what[i] != null &&
-                    !types[i].IsAssignableFrom(what[i].GetType()))
-                {
-                    throw new ArgumentTypeException(
-                        who, i + 1, what[i].GetType(), types[i]);
-                }
+                CheckType(who, i + 1, what[i], types[i]);
             }
         }
 
@@ -173,6 +179,14 @@ namespace SaturnValley.SharpF
             for (int i = args.Count - 1; i>= 0; i--)
                 list = new Pair(args[i], list);
             return list;
+        }
+
+        [Primitive("null?")]
+        public static Datum NullP(List<Datum> args)
+        {
+            RequireArgs("null?", args, typeof(Datum));
+
+            return new Boolean(args[0] == null);
         }
 
         // Strings

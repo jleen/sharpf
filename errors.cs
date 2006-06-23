@@ -107,9 +107,15 @@ namespace SaturnValley.SharpF
         {
             get
             {
+                string suppliedName;
+                if (supplied == null)
+                    suppliedName = "Null";
+                else
+                    suppliedName = supplied.Name;
+
                 return func + " expects argument " +
                     index.ToString() + " to be " +
-                    required.Name + ", but " + supplied.Name +
+                    required.Name + ", but " + suppliedName +
                     " was supplied.";
             }
         }
