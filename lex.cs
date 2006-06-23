@@ -70,7 +70,9 @@ namespace SaturnValley.SharpF
             new TokenData(TokenType.Quote,
                           new Regex(@"'")),
             new TokenData(TokenType.String,
-                          new Regex(@"""[^""]*"""))
+                          new Regex(@"""[^""]*""")),
+            new TokenData(TokenType.Boolean,
+                          new Regex(@"#[TtFf]"))
         };
 
         public static IEnumerable<Token> Lex(StreamReader sr)

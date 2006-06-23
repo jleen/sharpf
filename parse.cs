@@ -54,6 +54,12 @@ namespace SaturnValley.SharpF
                     }
                     return new Rational(num, denom);
                 }
+                case TokenType.Boolean: {
+                    if (token.text.ToLower() == "#t")
+                        return new Boolean(true);
+                    else
+                        return new Boolean(false);
+                }
                 case TokenType.Open: {
                     return ParseList(tokens);
                 }

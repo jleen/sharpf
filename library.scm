@@ -17,3 +17,6 @@
   (if (= n 0)
       (car lst)
     (list-ref (- n 1) (cdr lst))))
+
+(define (not p)
+  (if p #f #t))

@@ -66,21 +66,19 @@ namespace SaturnValley.SharpF
                         }
                         if (exp is Pair)
                         {
-                            Pair p = (Pair)exp;
+                            Pair form = (Pair)exp;
 
-                            if (p.car is Symbol)
+                            if (form.car is Symbol)
                             {
-                                string form = (p.car as Symbol).name;
+                                string name = (form.car as Symbol).name;
                                 try
                                 {
-                                    switch (form)
+                                    switch (name)
                                     {
                                         case "lambda":
                                         {
-                                            Pair formals =
-                                                (Pair)((Pair)p.cdr).car;
-                                            Datum body =
-                                                (Pair)((Pair)p.cdr).cdr;
+                                            Pair formals = (Pair)form.Second;
+                                            Datum body = form.Cdr.Cdr;
 
                                             call.target = Actor.Continue;
                                             call.arg = new Closure(
@@ -91,24 +89,21 @@ namespace SaturnValley.SharpF
                                         case "quote":
                                         {
                                             call.target = Actor.Continue;
-                                            call.arg = ((Pair)p.cdr).car;
+                                            call.arg = form.Second;
                                             goto NextCall;
                                         }
                                         case "begin":
                                         {
                                             call.target =
                                                 Actor.EvalSequence;
-                                            call.arg = p.cdr;
+                                            call.arg = form.cdr;
                                             goto NextCall;
                                         }
                                         case "if":
                                         {
-                                            Pair clauses = p.cdr as Pair;
-                                            Datum test = clauses.car;
-                                            Datum conseq =
-                                                ((Pair)clauses.cdr).car;
-                                            Datum alts =
-                                                ((Pair)clauses.cdr).cdr;
+                                            Datum test = form.Second;
+                                            Datum conseq = form.Third;
+                                            Datum alts = form.Cdr.Cdr.Cdr;
 
                                             call.target = Actor.Eval;
                                             call.arg = test;
@@ -124,15 +119,13 @@ namespace SaturnValley.SharpF
                                         }
                                         case "define":
                                         {
-                                            Datum what = ((Pair)p.cdr).car;
-                                            Symbol name;
+                                            Datum what = form.Second;
+                                            Symbol who;
                                             if (what is Symbol)
                                             {
-                                                name =
+                                                who =
                                                     (Symbol)what;
-                                                Datum val_exp =
-                                                    ((Pair)
-                                                     ((Pair)p.cdr).cdr).car;
+                                                Datum val_exp = form.Third;
 
                                                 call.target = Actor.Eval;
                                                 call.arg = val_exp;
@@ -140,12 +133,9 @@ namespace SaturnValley.SharpF
                                             }
                                             else
                                             {
-                                                name = (Symbol)
-                                                    Car(what);
-                                                Pair formals = (Pair)
-                                                    Cdr(what);
-                                                Datum body =
-                                                    Cdr(Cdr(p));
+                                                who = (Symbol)what.Car;
+                                                Pair formals = (Pair)what.Cdr;
+                                                Datum body = form.Cdr.Cdr;
 
                                                 call.target =
                                                     Actor.Continue;
@@ -155,7 +145,7 @@ namespace SaturnValley.SharpF
 
                                             call.next = new Action(
                                                 Actor.ExecuteDefine,
-                                                name,
+                                                who,
                                                 env,
                                                 call.next);
 
@@ -166,16 +156,16 @@ namespace SaturnValley.SharpF
                                 }
                                 catch (NullReferenceException)
                                 {
-                                    throw new BadFormException(form);
+                                    throw new BadFormException(name);
                                 }
                                 catch (InvalidCastException)
                                 {
-                                    throw new BadFormException(form);
+                                    throw new BadFormException(name);
                                 }
                             }
 
                             call.target = Actor.EvalList;
-                            call.arg = new Pair(p, null);
+                            call.arg = new Pair(form, null);
                             call.env = env;
                             
                             call.next = new Action(
@@ -200,8 +190,9 @@ namespace SaturnValley.SharpF
                         Pair exps = (Pair)p.car;
                         Pair acc = (Pair)p.cdr;
 
-                        if (call.result != null)
-                            acc = new Pair(call.result, acc);
+                        // Cheesiness: First time we're here, we stick a null
+                        // in the accumulator.  Yuck.
+                        acc = new Pair(call.result, acc);
 
                         if (exps == null)
                         {
@@ -236,6 +227,9 @@ namespace SaturnValley.SharpF
                         }
                         args.Reverse();
                         
+                        // Remove cheesy null
+                        args.RemoveAt(0);
+
                         Datum func = args[0];
                         args.RemoveAt(0);
 
@@ -389,16 +383,6 @@ NextCall:
 
             Shell.Trace("Returning...\n");
             return call.arg;
-        }
-
-        public static Datum Car(Datum p)
-        {
-            return ((Pair)p).car;
-        }
-
-        public static Datum Cdr(Datum p)
-        {
-            return ((Pair)p).cdr;
         }
     }
 }

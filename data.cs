@@ -4,6 +4,30 @@ namespace SaturnValley.SharpF
 {
     public class Datum
     {
+        public Datum Car
+        {
+            get { return ((Pair)this).car; }
+        }
+
+        public Datum Cdr
+        {
+            get { return ((Pair)this).cdr; }
+        }
+
+        public Datum First
+        {
+            get { return this.Car; }
+        }
+
+        public Datum Second
+        {
+            get { return this.Cdr.Car; }
+        }
+
+        public Datum Third
+        {
+            get { return this.Cdr.Cdr.Car; }
+        }
     }
 
     public class Unspecified : Datum
