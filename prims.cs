@@ -135,7 +135,7 @@ namespace SaturnValley.SharpF
         public static Datum List(List<Datum> args)
         {
             Pair list = null;
-            for (int i = args.Count - 1; i>= 0; i++)
+            for (int i = args.Count - 1; i>= 0; i--)
                 list = new Pair(args[i], list);
             return list;
         }
