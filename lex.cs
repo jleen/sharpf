@@ -60,9 +60,9 @@ namespace SaturnValley.SharpF
                                     @"[" + symbolChars + subseqChars + @"]*" +
                                     @"|\+|-|\.\.\.)" + wordBoundary)),
             new TokenData(TokenType.Integer,
-                          new Regex("^[0-9]+" + wordBoundary)),
+                          new Regex("^-?[0-9]+" + wordBoundary)),
             new TokenData(TokenType.Rational,
-                          new Regex("^[0-9]+/[0-9]+" + wordBoundary)),
+                          new Regex("^-?[0-9]+/[0-9]+" + wordBoundary)),
             new TokenData(TokenType.Open,
                           new Regex(@"^\(")),
             new TokenData(TokenType.Close,
