@@ -137,9 +137,9 @@ namespace SaturnValley.SharpF
         public static Datum Quotient(List<Datum> args)
         {
             RequireArgs("quotient", args, typeof(Integer), typeof(Integer));
-
             int n1 = ((Rational)args[0]).Num;
             int n2 = ((Rational)args[1]).Num;
+
             return new Integer(n1 / n2);
         }
 
@@ -147,12 +147,26 @@ namespace SaturnValley.SharpF
         public static Datum Remainder(List<Datum> args)
         {
             RequireArgs("remainder", args, typeof(Integer), typeof(Integer));
-
             int n1 = ((Rational)args[0]).Num;
             int n2 = ((Rational)args[1]).Num;
+
             return new Integer(n1 - n2 * (n1 / n2));
         }
             
+        [Primitive("round")]
+        public static Datum Round(List<Datum> args)
+        {
+            RequireArgs("round", args, typeof(Rational));
+            Rational r = (Rational)args[0];
+            int n = r.Num;
+            int d = r.Denom;
+
+            // Miraculously, this seems to adhere to the Scheme/IEEE standard
+            // and round halves to the nearest even.
+            return new Integer(
+                (int)System.Math.Round((decimal)n / (decimal)d));
+        }
+
         [Primitive("=")]
         public static Datum NumEqual(List<Datum> args)
         {
