@@ -110,6 +110,7 @@ namespace SaturnValley.SharpF
                                             call.arg = form.Second;
                                             goto NextCall;
                                         }
+
                                         case "begin":
                                         {
                                             call.target =
@@ -117,6 +118,7 @@ namespace SaturnValley.SharpF
                                             call.arg = form.cdr;
                                             goto NextCall;
                                         }
+
                                         case "if":
                                         {
                                             Datum test = form.Second;
@@ -135,6 +137,7 @@ namespace SaturnValley.SharpF
 
                                             goto NextCall;
                                         }
+
                                         case "cond":
                                         {
                                             Datum clauses = form.Cdr;
@@ -144,6 +147,7 @@ namespace SaturnValley.SharpF
                                             call.env = env;
                                             goto NextCall;
                                         }
+
                                         case "define":
                                         {
                                             Datum what = form.Second;
@@ -178,6 +182,22 @@ namespace SaturnValley.SharpF
 
                                             goto NextCall;
 
+                                        }
+
+                                        case "let":
+                                        {
+                                            call.target = Actor.Eval;
+                                            call.arg =
+                                                Transform.Let(form);
+                                            goto NextCall;
+                                        }
+
+                                        case "let*":
+                                        {
+                                            call.target = Actor.Eval;
+                                            call.arg =
+                                                Transform.LetStar(form);
+                                            goto NextCall;
                                         }
                                     }
                                 }

@@ -15,7 +15,9 @@ sharpf.exe: \
 	lex.cs \
 	parse.cs \
 	prims.cs \
-	sharpf.cs
+	sharpf.cs \
+	transform.cs \
+
 	csc /debug $^
 
 tags: *.cs *.scm

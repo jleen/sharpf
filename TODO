@@ -1,2 +1,5 @@
-let
-let*
+error handling
+code cleanup
+define-syntax ?
+defmacro ?
+better math?
