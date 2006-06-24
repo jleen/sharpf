@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace SaturnValley.SharpF
 {
-    public class Environment
+    public class Environment : Datum
     {
         public static Environment Toplevel;
 

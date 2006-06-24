@@ -171,12 +171,15 @@ namespace SaturnValley.SharpF
     public class Primitive : Datum
     {
         public string name;
+        public bool magicEnvironment;
         public PrimitiveImplementation implementation;
 
-        public Primitive(string n, PrimitiveImplementation i)
+        public Primitive(
+            string n, PrimitiveImplementation i, bool menv)
         {
             name = n;
             implementation = i;
+            magicEnvironment = menv;
         }
     }
 }

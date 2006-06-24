@@ -9,6 +9,7 @@ namespace SaturnValley.SharpF
         public enum Actor
         {
             Continue,
+            Apply,
             Eval,
             EvalList,
             EvalSequence,
@@ -231,8 +232,15 @@ namespace SaturnValley.SharpF
 
                     case Actor.ExecuteApply:
                     {
+                        call.target = Actor.Apply;
+                        call.arg = call.Result;
+                        goto NextCall;
+                    }
+
+                    case Actor.Apply:
+                    {
                         Environment env = call.env;
-                        Pair vals = (Pair)call.Result;
+                        Pair vals = (Pair)call.arg;
 
                         List<Datum> args = new List<Datum>();
                         while (vals != null)
@@ -277,6 +285,10 @@ namespace SaturnValley.SharpF
                             else
                             {
                                 call.target = Actor.Continue;
+                                if (prim.magicEnvironment)
+                                {
+                                    args.Insert(0, env);
+                                }
                                 call.arg = prim.implementation(args);
                                 goto NextCall;
                             }

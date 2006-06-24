@@ -9,15 +9,30 @@ namespace SaturnValley.SharpF
     public class PrimitiveAttribute : Attribute
     {
         public string name;
+        public Primitives.MagicArgs magicArgs;
 
         public PrimitiveAttribute(string n)
         {
             name = n;
+            magicArgs = Primitives.MagicArgs.None;
+        }
+
+        public PrimitiveAttribute(string n, Primitives.MagicArgs ma)
+        {
+            name = n;
+            magicArgs = ma;
         }
     }
 
-    static class Primitives
+    public static class Primitives
     {
+        [Flags]
+        public enum MagicArgs
+        {
+            None = 0,
+            Environment = 1
+        }
+
         public static void CheckType(string who, int i, Datum arg, Type t)
         {
             if (arg != null)
@@ -231,6 +246,39 @@ namespace SaturnValley.SharpF
             return new Boolean(args[0] == null);
         }
 
+        [Primitive("map", MagicArgs.Environment)]
+        public static Datum Map(List<Datum> args)
+        {
+            // TODO: This is going to require some interesting
+            // type-checking.
+
+            // shift!
+            Environment env = (Environment)args[0];
+            args.RemoveAt(0);
+
+            // shift!
+            Datum func = args[0];
+            args.RemoveAt(0);
+
+            List<Datum> results = new List<Datum>();
+            while (args[0] != null)
+            {
+                Pair slice = new Pair(func, null);
+                for (int i = 0; i < args.Count; i++)
+                {
+                    slice = new Pair(args[i].Car, slice);
+                    args[i] = args[i].Cdr;
+                }
+                Datum res = Evaluator.Act(new Evaluator.Action(
+                    Evaluator.Actor.Apply,
+                    slice,
+                    env,
+                    null));
+                results.Add(res);
+            }
+            return List(results);
+        }
+
         // Strings
         [Primitive("string-append")]
         public static Datum StringAppend(List<Datum> args)
@@ -339,6 +387,7 @@ namespace SaturnValley.SharpF
                             primAttr.name,
                             (PrimitiveImplementation)Delegate.CreateDelegate(
                                 typeof(PrimitiveImplementation), meth),
+                            primAttr.magicArgs,
                             env);
                     }
                 }
@@ -347,10 +396,12 @@ namespace SaturnValley.SharpF
 
         private static void BindPrimitive(string name,
                                           PrimitiveImplementation impl,
+                                          MagicArgs magicArgs,
                                           Environment env)
         {
+            bool magicEnv = (magicArgs & MagicArgs.Environment) != 0;
             env.Bind(new Symbol(name),
-                     new Primitive(name, impl));
+                     new Primitive(name, impl, magicEnv));
         }
     }
 }
