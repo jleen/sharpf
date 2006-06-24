@@ -15,6 +15,7 @@ namespace SaturnValley.SharpF
             EvalSequence,
             ExecuteApply,
             ExecuteIf,
+            ExecuteCond,
             ExecuteDefine
         }
 
@@ -132,6 +133,15 @@ namespace SaturnValley.SharpF
                                                 env,
                                                 call.next);
 
+                                            goto NextCall;
+                                        }
+                                        case "cond":
+                                        {
+                                            Datum clauses = form.Cdr;
+
+                                            call.target = Actor.ExecuteCond;
+                                            call.arg = new Pair(clauses, null);
+                                            call.env = env;
                                             goto NextCall;
                                         }
                                         case "define":
@@ -341,9 +351,7 @@ namespace SaturnValley.SharpF
                         Datum conseq = p.car;
                         Datum alts = p.cdr;
 
-                        Boolean bool_res = call.Result as Boolean;
-                        if (bool_res != null &&
-                            bool_res.val == false)
+                        if (!Datum.IsTrue(call.Result))
                         {
                             call.target =
                                 Actor.EvalSequence;
@@ -356,6 +364,58 @@ namespace SaturnValley.SharpF
                             call.arg = conseq;
                             goto NextCall;
                         }
+                    }
+
+                    case Actor.ExecuteCond:
+                    {
+                        Datum clauses = call.arg.Car;
+                        Datum thisConsequent = call.arg.Cdr;
+                        Environment env = call.env;
+
+                        // If we've just executed a successful test,
+                        // continue with the consequent.
+                        if (call.HasResult &&
+                            Datum.IsTrue(call.Result))
+                        {
+                            call.target = Actor.Eval;
+                            call.arg = thisConsequent;
+                            call.env = env;
+                            goto NextCall;
+                        }
+
+                        // Are we done?
+                        if (clauses == null)
+                        {
+                            // Didn't match any clauses.
+                            call.target = Actor.Continue;
+                            call.arg = new Unspecified();
+                            goto NextCall;
+                        }
+
+                        Datum test = clauses.Car.First;
+                        Datum consequent = clauses.Car.Second;
+
+                        // Are we at an ELSE?
+                        Symbol symTest = test as Symbol;
+                        if (symTest != null &&
+                            symTest.name == "else")
+                        {
+                            call.target = Actor.Eval;
+                            call.arg = consequent;
+                            call.env = env;
+                            goto NextCall;
+                        }
+
+                        // We've got more clauses.  Do the test, and reenter.
+                        call.target = Actor.Eval;
+                        call.arg = test;
+                        call.env = env;
+                        call.next = new Action(
+                            Actor.ExecuteCond,
+                            new Pair(clauses.Cdr, consequent),
+                            env,
+                            call.next);
+                        goto NextCall;
                     }
 
                     case Actor.ExecuteDefine:

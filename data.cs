@@ -4,6 +4,15 @@ namespace SaturnValley.SharpF
 {
     public class Datum
     {
+        public static bool IsTrue(Datum d)
+        {
+            // Everything not false is true.
+            Boolean b = d as Boolean;
+            if (b != null && b.val == false)
+                return false;
+            else
+                return true;
+        }
         public Datum Car
         {
             get { return ((Pair)this).car; }
