@@ -16,7 +16,7 @@ sharpf.exe: \
 	parse.cs \
 	prims.cs \
 	sharpf.cs
-	csc /define:TRACE /debug $^
+	csc /debug $^
 
 tags: *.cs *.scm
 	ctags $^

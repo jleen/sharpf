@@ -69,6 +69,21 @@ namespace SaturnValley.SharpF
         }
     }
 
+    class MathException : EvaluatorException
+    {
+        private string msg;
+
+        override public string Message
+        {
+            get { return msg; }
+        }
+
+        public MathException(string m)
+        {
+            msg = m;
+        }
+    }
+
     class MissingArgumentException : EvaluatorException
     {
         private string func;

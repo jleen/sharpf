@@ -103,11 +103,9 @@ namespace SaturnValley.SharpF
             return i;
         }
 
-        public void Reciprocal()
+        public Rational Reciprocal
         {
-            int swap = num;
-            denom = num;
-            num = denom;
+            get { return new Rational(denom, num); }
         }
 
         private void Reduce()
@@ -125,6 +123,9 @@ namespace SaturnValley.SharpF
 
         public Rational(int n, int d)
         {
+            if (d == 0)
+                throw new MathException("Division by zero!");
+
             num = n;
             denom = d;
             this.Reduce();

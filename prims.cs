@@ -20,12 +20,22 @@ namespace SaturnValley.SharpF
     {
         public static void CheckType(string who, int i, Datum arg, Type t)
         {
-            if (arg != null &&
-                !t.IsAssignableFrom(arg.GetType()))
+            if (arg != null)
             {
-                throw new ArgumentTypeException(who, i, arg.GetType(), t);
-            }
+                if (t == typeof(Integer))
+                {
+                    if (((Rational)arg).Denom != 1)
+                    {
+                        throw new ArgumentTypeException(
+                            who, i, arg.GetType(), typeof(Integer));
+                    }
 
+                    t = typeof(Rational);
+                }
+
+                if (!t.IsAssignableFrom(arg.GetType()))
+                    throw new ArgumentTypeException(who, i, arg.GetType(), t);
+            }
             if (arg == null &&
                 !t.IsAssignableFrom(typeof(Datum)))
             {
@@ -118,13 +128,31 @@ namespace SaturnValley.SharpF
         {
             RequireMultiArgs("/", args, 1, typeof(Number));
 
-            Rational n = (Rational)args[0];
-            n.Reciprocal();
-            Rational res = (Rational)Add(args);
-            res.Reciprocal();
-            return res;
+            for (int i = 1; i < args.Count; i++)
+                args[i] = ((Rational)args[i]).Reciprocal;
+            return Multiply(args);
         }
 
+        [Primitive("quotient")]
+        public static Datum Quotient(List<Datum> args)
+        {
+            RequireArgs("quotient", args, typeof(Integer), typeof(Integer));
+
+            int n1 = ((Rational)args[0]).Num;
+            int n2 = ((Rational)args[1]).Num;
+            return new Integer(n1 / n2);
+        }
+
+        [Primitive("remainder")]
+        public static Datum Remainder(List<Datum> args)
+        {
+            RequireArgs("remainder", args, typeof(Integer), typeof(Integer));
+
+            int n1 = ((Rational)args[0]).Num;
+            int n2 = ((Rational)args[1]).Num;
+            return new Integer(n1 - n2 * (n1 / n2));
+        }
+            
         [Primitive("=")]
         public static Datum NumEqual(List<Datum> args)
         {
