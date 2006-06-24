@@ -24,7 +24,8 @@ namespace SaturnValley.SharpF
                                 Evaluator.Actor.Eval,
                                 Read(new System.IO.StreamReader(
                                     Console.OpenStandardInput())),
-                                Environment.Toplevel)));
+                                Environment.Toplevel,
+                                null)));
                 }
                 catch (SharpFException e)
                 {
@@ -44,10 +45,22 @@ namespace SaturnValley.SharpF
         }
 
         [Conditional("TRACE")]
-        public static void Trace(params object[] objs)
+        public static void TraceHeader()
         {
             Console.WriteLine(new System.String('=', 78));
+        }
 
+        [Conditional("TRACE")]
+        public static void Trace(params object[] objs)
+        {
+            TraceHeader();
+            TraceLine(objs);
+            Console.WriteLine();
+        }
+
+        [Conditional("TRACE")]
+        public static void TraceLine(params object[] objs)
+        {
             foreach (Object o in objs)
             {
                 if (o is string)
@@ -73,8 +86,25 @@ namespace SaturnValley.SharpF
                         Console.Write(o.ToString());
                 }
             }
+        }
 
-            Console.WriteLine();
+        [Conditional("TRACE")]
+        public static void TraceAction(string what, Evaluator.Action call)
+        {
+            Shell.TraceHeader();
+            while (call != null)
+            {
+                Shell.TraceLine(
+                    what, " ", call.target,
+                    "\nwith arg ", call.arg,
+                    "\nresult ",
+                    call.HasResult ?
+                    (object)call.Result : (object)"{none}",
+                    "\nand environment ", call.env.GetHashCode());
+                call = call.next;
+                what = "\nNext action will be";
+            }
+            Shell.TraceLine(what, " to return\n");
         }
 
         public static void Print(Datum a)

@@ -31,7 +31,7 @@ namespace SaturnValley.SharpF
             while (env != null)
             {
                 Shell.Trace("Looking up name ", sym,
-                            "\nin environment", env.GetHashCode());
+                            "\nin environment ", env.GetHashCode());
                 if (env.bindings.ContainsKey(sym.name))
                 {
                     Shell.Trace("Found value ", env.bindings[sym.name]);

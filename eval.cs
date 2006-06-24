@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace SaturnValley.SharpF
 {
@@ -22,14 +23,31 @@ namespace SaturnValley.SharpF
             public Datum arg;
             public Environment env;
             public Action next;
-            public Datum result;
+            private Datum result;
+            public bool hasResult;
 
-            public Action(Actor t, Datum a, Environment e)
+            public Datum Result
             {
-                target = t;
-                arg = a;
-                env = e;
-                next = null;
+                get
+                {
+                    Debug.Assert(hasResult);
+                    return result;
+                }
+                set
+                {
+                    result = value;
+                    hasResult = true;
+                }
+            }
+
+            public bool HasResult
+            {
+                get { return hasResult; }
+            }
+
+            public void ClearResult()
+            {
+                hasResult = false;
             }
 
             public Action(
@@ -39,6 +57,8 @@ namespace SaturnValley.SharpF
                 arg = a;
                 env = e;
                 next = n;
+                result = null;
+                hasResult = false;
             }
         }
 
@@ -46,11 +66,7 @@ namespace SaturnValley.SharpF
         {
             while (call.target != Actor.Continue)
             {
-                Shell.Trace("Entering ", call.target,
-                            "\nwith arg ", call.arg,
-                            "\nresult ", call.result,
-                            "\nand environment ", call.env.GetHashCode());
-
+                Shell.TraceAction("Entering", call);
                 switch (call.target)
                 {
                     case Actor.Eval:
@@ -190,9 +206,8 @@ namespace SaturnValley.SharpF
                         Pair exps = (Pair)p.car;
                         Pair acc = (Pair)p.cdr;
 
-                        // Cheesiness: First time we're here, we stick a null
-                        // in the accumulator.  Yuck.
-                        acc = new Pair(call.result, acc);
+                        if (call.HasResult)
+                            acc = new Pair(call.Result, acc);
 
                         if (exps == null)
                         {
@@ -217,7 +232,7 @@ namespace SaturnValley.SharpF
                     case Actor.ExecuteApply:
                     {
                         Environment env = call.env;
-                        Pair vals = (Pair)call.result;
+                        Pair vals = (Pair)call.Result;
 
                         List<Datum> args = new List<Datum>();
                         while (vals != null)
@@ -227,9 +242,6 @@ namespace SaturnValley.SharpF
                         }
                         args.Reverse();
                         
-                        // Remove cheesy null
-                        args.RemoveAt(0);
-
                         Datum func = args[0];
                         args.RemoveAt(0);
 
@@ -242,7 +254,15 @@ namespace SaturnValley.SharpF
                             if (prim.name == "call-with-current-continuation")
                             {
                                 Continuation current =
-                                    new Continuation(call.next);
+                                    new Continuation(
+                                        new Action(
+                                            call.next.target,
+                                            call.next.arg,
+                                            call.next.env,
+                                            call.next.next));
+                                Shell.TraceAction(
+                                    "Creating continuation which will",
+                                    call.next);
                                 Datum recip = args[0];
                                 call.target = Actor.Continue;
                                 call.arg =
@@ -267,6 +287,9 @@ namespace SaturnValley.SharpF
                         Continuation cont = func as Continuation;
                         if (cont != null)
                         {
+                            Shell.TraceAction(
+                                "Defrosting continuation which will",
+                                cont.call);
                             call.target = Actor.Continue;
                             call.arg = args[0];
                             // We cheerfully blow away the existing value
@@ -306,7 +329,7 @@ namespace SaturnValley.SharpF
                         Datum conseq = p.car;
                         Datum alts = p.cdr;
 
-                        Boolean bool_res = call.result as Boolean;
+                        Boolean bool_res = call.Result as Boolean;
                         if (bool_res != null &&
                             bool_res.val == false)
                         {
@@ -326,7 +349,7 @@ namespace SaturnValley.SharpF
                     case Actor.ExecuteDefine:
                     {
 
-                        call.env.Bind((Symbol)call.arg, call.result);
+                        call.env.Bind((Symbol)call.arg, call.Result);
 
                         call.target = Actor.Continue;
                         call.arg = new Unspecified();
@@ -369,19 +392,19 @@ namespace SaturnValley.SharpF
 NextCall:
                 if (call.target != Actor.Continue)
                 {
-                    call.result = null;
+                    call.ClearResult();
                 }
 
                 if (call.target == Actor.Continue &&
                     call.next != null)
                 {
                     Shell.Trace("Continuing with result ", call.arg);
-                    call.next.result = call.arg;
+                    call.next.Result = call.arg;
                     call = call.next;
                 }
             }
 
-            Shell.Trace("Returning...\n");
+            Shell.Trace("Returning...");
             return call.arg;
         }
     }
