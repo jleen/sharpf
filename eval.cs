@@ -16,6 +16,7 @@ namespace SaturnValley.SharpF
             ExecuteApply,
             ExecuteIf,
             ExecuteCond,
+            ExecuteSetQ,
             ExecuteDefine
         }
 
@@ -145,6 +146,21 @@ namespace SaturnValley.SharpF
                                             call.target = Actor.ExecuteCond;
                                             call.arg = new Pair(clauses, null);
                                             call.env = env;
+                                            goto NextCall;
+                                        }
+
+                                        case "set!":
+                                        {
+                                            Symbol what = (Symbol)form.Second;
+                                            Datum val_exp = form.Third;
+
+                                            call.target = Actor.Eval;
+                                            call.arg = val_exp;
+                                            call.next = new Action(
+                                                Actor.ExecuteSetQ,
+                                                what,
+                                                env,
+                                                call.next);
                                             goto NextCall;
                                         }
 
@@ -346,7 +362,7 @@ namespace SaturnValley.SharpF
 
                         if (closure != null)
                         {
-                            Environment new_env = new Environment(env);
+                            Environment new_env = new Environment(closure.env);
                             Pair paramlist = closure.formals;
                             foreach (Datum arg in args)
                             {
@@ -435,6 +451,15 @@ namespace SaturnValley.SharpF
                             new Pair(clauses.Cdr, consequent),
                             env,
                             call.next);
+                        goto NextCall;
+                    }
+
+                    case Actor.ExecuteSetQ:
+                    {
+                        call.env.Set((Symbol)call.arg, call.Result);
+
+                        call.target = Actor.Continue;
+                        call.arg = new Unspecified();
                         goto NextCall;
                     }
 

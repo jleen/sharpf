@@ -13,10 +13,12 @@
 (define (caddr pair)
   (car (cdr (cdr pair))))
 
-(define (list-ref n lst)
+(define (list-ref lst n)
   (if (= n 0)
       (car lst)
-    (list-ref (- n 1) (cdr lst))))
+    (list-ref (cdr lst) (- n 1) )))
 
 (define (not p)
   (if p #f #t))
+
+(define for-each map)

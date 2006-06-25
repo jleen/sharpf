@@ -6,6 +6,7 @@ namespace SaturnValley.SharpF
     {
         struct LetComps
         {
+            public Symbol self;
             public List<Pair> bindings;
             public Datum body;
         }
@@ -13,14 +14,22 @@ namespace SaturnValley.SharpF
         private static LetComps DestructureLet(Datum exp)
         {
             LetComps comps;
+            comps.self = null;
             comps.bindings = new List<Pair>();
             Datum bindList = exp.Second;
+            comps.body = exp.Cdr.Cdr;
+            if (bindList is Symbol)
+            {
+                comps.self = (Symbol)bindList;
+                bindList = exp.Third;
+                comps.body = exp.Cdr.Cdr.Cdr;
+            }
+
             while (bindList != null)
             {
                 comps.bindings.Add((Pair)bindList.Car);
                 bindList = bindList.Cdr;
             }
-            comps.body = exp.Cdr.Cdr;
             return comps;
         }
 
@@ -35,10 +44,25 @@ namespace SaturnValley.SharpF
                 vals.Add(p.Second);
             }
             Datum formals = Primitives.List(names);
-            Datum transform = 
-                new Pair(new Pair(new Symbol("lambda"),
-                                  new Pair(formals, comps.body)),
-                         Primitives.List(vals));
+            Datum bodyFunc = new Pair(new Symbol("lambda"),
+                                      new Pair(formals, comps.body));
+            Datum transform;
+            if (comps.self == null)
+            {
+                transform = new Pair(bodyFunc, Primitives.List(vals));
+            }
+            else
+            {
+                transform =
+                    new Pair(Datum.List(new Symbol("let"),
+                                        Datum.List(Datum.List(comps.self,
+                                                              null)),
+                                        Datum.List(new Symbol("set!"),
+                                                   comps.self,
+                                                   bodyFunc),
+                                        comps.self),
+                             Primitives.List(vals));
+            }
             Shell.Trace("LET transform produced ", transform);
             return transform;
         }
@@ -51,6 +75,7 @@ namespace SaturnValley.SharpF
         private static Datum ConstructLambdaFromLetStar(LetComps comps)
         {
             LetComps outer;
+            outer.self = null;
             outer.bindings = new List<Pair>();
 
             if (comps.bindings.Count == 0)
@@ -63,6 +88,7 @@ namespace SaturnValley.SharpF
                 comps.bindings.RemoveAt(0);
 
                 LetComps inner;
+                inner.self = null;
                 inner.bindings = comps.bindings;
                 inner.body = comps.body;
 

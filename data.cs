@@ -13,6 +13,13 @@ namespace SaturnValley.SharpF
             else
                 return true;
         }
+        public static Datum List(params Datum[] elts)
+        {
+            Pair list = null;
+            for (int i = elts.Length - 1; i>= 0; i--)
+                list = new Pair(elts[i], list);
+            return list;
+        }
         public Datum Car
         {
             get { return ((Pair)this).car; }

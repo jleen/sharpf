@@ -25,6 +25,22 @@ namespace SaturnValley.SharpF
             bindings[sym.name] = value;
         }
 
+        public void Set(Symbol sym, Datum value)
+        {
+            Environment env = this;
+            while (env != null)
+            {
+                if (env.bindings.ContainsKey(sym.name))
+                {
+                    env.bindings[sym.name] = value;
+                    return;
+                }
+                env = env.parent;
+            }
+
+            throw new UnboundSymbolException(sym);
+        }
+
         public Datum Lookup(Symbol sym)
         {
             Environment env = this;

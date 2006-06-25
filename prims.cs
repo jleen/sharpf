@@ -155,7 +155,7 @@ namespace SaturnValley.SharpF
             int n1 = ((Rational)args[0]).Num;
             int n2 = ((Rational)args[1]).Num;
 
-            return new Integer(n1 / n2);
+            return new Rational(n1 / n2, 1);
         }
 
         [Primitive("remainder")]
@@ -165,7 +165,7 @@ namespace SaturnValley.SharpF
             int n1 = ((Rational)args[0]).Num;
             int n2 = ((Rational)args[1]).Num;
 
-            return new Integer(n1 - n2 * (n1 / n2));
+            return new Rational(n1 - n2 * (n1 / n2), 1);
         }
             
         [Primitive("round")]
@@ -178,8 +178,20 @@ namespace SaturnValley.SharpF
 
             // Miraculously, this seems to adhere to the Scheme/IEEE standard
             // and round halves to the nearest even.
-            return new Integer(
-                (int)System.Math.Round((decimal)n / (decimal)d));
+            return new Rational(
+                (int)System.Math.Round((decimal)n / (decimal)d), 1);
+        }
+
+        [Primitive("floor")]
+        public static Datum Floor(List<Datum> args)
+        {
+            RequireArgs("floor", args, typeof(Rational));
+            Rational r = (Rational)args[0];
+            int n = r.Num;
+            int d = r.Denom;
+
+            return new Rational(
+                (int)System.Math.Floor((decimal)n / (decimal)d), 1);
         }
 
         [Primitive("=")]
@@ -190,6 +202,26 @@ namespace SaturnValley.SharpF
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
             return new Boolean(i.Num == j.Num && i.Denom == j.Denom);
+        }
+
+        [Primitive(">")]
+        public static Datum GreaterThan(List<Datum> args)
+        {
+            RequireArgs(">", args, typeof(Number), typeof(Number));
+
+            Rational i = (Rational)args[0];
+            Rational j = (Rational)args[1];
+            return new Boolean(i.Num * j.Denom > j.Num * i.Denom);
+        }
+
+        [Primitive(">=")]
+        public static Datum GreaterEqual(List<Datum> args)
+        {
+            RequireArgs(">=", args, typeof(Number), typeof(Number));
+
+            Rational i = (Rational)args[0];
+            Rational j = (Rational)args[1];
+            return new Boolean(i.Num * j.Denom >= j.Num * i.Denom);
         }
 
         [Primitive("<")]
@@ -244,6 +276,21 @@ namespace SaturnValley.SharpF
             RequireArgs("null?", args, typeof(Datum));
 
             return new Boolean(args[0] == null);
+        }
+
+        [Primitive("length")]
+        public static Datum Length(List<Datum> args)
+        {
+            Datum list = args[0];
+
+            int len = 0;
+            while (list != null)
+            {
+                ++len;
+                list = list.Cdr;
+            }
+
+            return new Rational(len, 1);
         }
 
         [Primitive("map", MagicArgs.Environment)]
