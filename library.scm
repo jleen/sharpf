@@ -1,3 +1,7 @@
+;; This file gets loaded automatically when the interpreter starts up.
+;; Define here any R5RS or utility functions which should be considered
+;; part of the core language.
+
 (define (caar pair)
   (car (car pair)))
 
@@ -20,5 +24,3 @@
 
 (define (not p)
   (if p #f #t))
-
-(define for-each map)

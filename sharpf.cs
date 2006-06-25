@@ -1,3 +1,12 @@
+/*
+ * sharpf.cs:
+ *
+ * Entry point.  The REPL and some I/O and debugging code.
+ *
+ * The Trace functions really deserve to be in their own file, and Print
+ * probably belongs in prims.cs.  Maybe some day.
+ */
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -112,6 +121,9 @@ namespace SaturnValley.SharpF
             Console.Write(Format(a));
         }
 
+        // I thought of doing Format as a virtual method of Datum, but I
+        // prefer to keep all the formatting bundled up here.
+
         public static string Format(Datum a)
         {
             if (a == null)
@@ -121,10 +133,6 @@ namespace SaturnValley.SharpF
             else if (a is Symbol)
             {
                 return (a as Symbol).name;
-            }
-            else if (a is Integer)
-            {
-                return (a as Integer).val.ToString();
             }
             else if (a is Rational)
             {

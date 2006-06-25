@@ -1,16 +1,46 @@
+/*
+ * transform.cs:
+ * 
+ * Hard-coded Common Lisp-style macros for "library syntax".  Scheme
+ * contains many special forms which could be implemented with DEFMACRO or
+ * DEFINE-SYNTAX, had I implemented DEFMACRO or DEFINE-SYNTAX.  Since I
+ * haven't implemented a transformation language, I here use C# as my
+ * (rather verbose) transformation language.  Public methods implement
+ * transformers for specific special forms.  Private methods are utilities.
+ */
+
 using System.Collections.Generic;
 
 namespace SaturnValley.SharpF
 {
     public static class Transform
     {
-        struct LetComps
+        // FUTURE: It might be nice to do attribute-based dispatch to
+        // these, as in prims.cs.
+
+        public static Datum Let(Datum exp)
+        {
+            return ConstructLambdaFromLet(DestructureLet(exp));
+        }
+
+        public static Datum LetStar(Datum exp)
+        {
+            return ConstructLambdaFromLetStar(DestructureLet(exp));
+        }
+
+        // This struct is rather "heavy" for what I want to do with it, but
+        // it seems the cleanest alternative to multiple return values,
+        // which C# lacks.
+
+        private struct LetComps
         {
             public Symbol self;
             public List<Pair> bindings;
             public Datum body;
         }
             
+        // Rip up a LET or LET* into its components.
+
         private static LetComps DestructureLet(Datum exp)
         {
             LetComps comps;
@@ -33,9 +63,12 @@ namespace SaturnValley.SharpF
             return comps;
         }
 
+        // Take a bag of LET components and write the equivalent LAMBDA
+        // expression.  Handles named LET.
+
         private static Datum ConstructLambdaFromLet(LetComps comps)
         {
-            // unzip
+            // Unzip!
             List<Datum> names = new List<Datum>();
             List<Datum> vals = new List<Datum>();
             foreach (Pair p in comps.bindings)
@@ -49,10 +82,12 @@ namespace SaturnValley.SharpF
             Datum transform;
             if (comps.self == null)
             {
+                // Unnamed LET.
                 transform = new Pair(bodyFunc, Primitives.List(vals));
             }
             else
             {
+                // Named LET.
                 transform =
                     new Pair(Datum.List(new Symbol("let"),
                                         Datum.List(Datum.List(comps.self,
@@ -67,10 +102,8 @@ namespace SaturnValley.SharpF
             return transform;
         }
 
-        public static Datum Let(Datum exp)
-        {
-            return ConstructLambdaFromLet(DestructureLet(exp));
-        }
+        // Ditto, but for LET*, which evaluates the bindings sequentially,
+        // each visible to its successors.
 
         private static Datum ConstructLambdaFromLetStar(LetComps comps)
         {
@@ -101,11 +134,6 @@ namespace SaturnValley.SharpF
             Datum transform = ConstructLambdaFromLet(outer);
             Shell.Trace("LET* transform produced ", transform);
             return transform;
-        }
-
-        public static Datum LetStar(Datum exp)
-        {
-            return ConstructLambdaFromLetStar(DestructureLet(exp));
         }
     }
 }

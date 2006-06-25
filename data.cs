@@ -1,3 +1,21 @@
+/*
+ * data.cs:
+ *
+ * Data types.  A Datum is a Scheme object.  Datum is abstract but contains
+ * a bunch of utilities.  It makes the Evaluator source *much* more
+ * readable to be able to just say datum.Car without typing out a cast.  So
+ * we do all the casting in the utility methods and, sure, throw if we have
+ * to.  Casting "this" may be unorthodox, but it leads to clearer code.
+ * Abstractly, it's physically possible to apply CAR and CDR operations to
+ * any datum; it simply throws an error in the general case.  Which is
+ * exactly right.
+ *
+ * Anyway, the actual data types are all subclasses.  We have three
+ * different subclasses for procedures: Primitive, Closure, and
+ * Continuation.  Maybe some day they should all be children of an abstract
+ * Procedure, but right now there doesn't seem to be any point.
+ */
+
 using System.Collections.Generic;
 
 namespace SaturnValley.SharpF
@@ -50,6 +68,8 @@ namespace SaturnValley.SharpF
     {
     }
 
+    // FUTURE: These should be interned.
+
     public class String : Datum
     {
         public string val;
@@ -71,6 +91,8 @@ namespace SaturnValley.SharpF
         }
     }
 
+    // FUTURE: These should be interned too.
+
     public class Symbol : Datum
     {
         public string name;
@@ -85,15 +107,23 @@ namespace SaturnValley.SharpF
     {
     }
 
+    // The Integer class is currently unused except as a token to the
+    // type-checking utilities in prims.cs.  I should probably change that,
+    // so we wouldn't need this class definition.  For now, I've made the
+    // constructor private so we won't construct one of them by accident.
+    // To represent an integer, just use a Rational with a denominator of
+    // 1.
+
     public class Integer : Number
     {
-        public int val;
-
-        public Integer(int v)
+        private Integer()
         {
-            val = v;
         }
     }
+
+    // A Rational is stored as a numerator and a denominator.  On
+    // construction, they're reduced to lowest terms by the Euclidean
+    // algorithm.  All this is probably terribly inefficient.
 
     public class Rational : Number
     {
@@ -158,6 +188,9 @@ namespace SaturnValley.SharpF
         }
     }
 
+    // A Continuation simply wraps the evaluator's internal representation
+    // of the callstack.  What else would you expect?
+
     public class Continuation : Datum
     {
         public Evaluator.Action call;
@@ -167,6 +200,9 @@ namespace SaturnValley.SharpF
             call = c;
         }
     }
+
+    // A closure has formals, a body, and a lexical environment.  It looks
+    // just like every other closure you've seen.
 
     public class Closure : Datum
     {
@@ -181,6 +217,9 @@ namespace SaturnValley.SharpF
             body = b;
         }
     }
+
+    // A Primitive wraps a delegate to a function defined in prims.cs
+    // (which see for details).
 
     public delegate Datum PrimitiveImplementation(List<Datum> args);
 

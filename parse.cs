@@ -1,5 +1,20 @@
+/*
+ * parse.cs:
+ *
+ * Parse a token stream into Scheme objects.  I'm proud of how little code
+ * there is here.  Parsing Lisp turns out to be trivial.  Parse and
+ * ParseList are mutually recursive:
+ *
+ *   - ParseList invokes Parse to parse each individual object in the
+ *     stream, and bundles them up into a Scheme list.
+ *
+ *   - Parse invokes ParseList whenever it encounters a left paren, and
+ *     returns the head of the resulting list.
+ */
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace SaturnValley.SharpF
@@ -29,7 +44,8 @@ namespace SaturnValley.SharpF
                     return new Symbol(token.text.ToLowerInvariant());
                 }
                 case TokenType.Integer: {
-                    // BOGUS!
+                    // TODO: Be less cheesy about integers.  Either *use*
+                    // the Integer class, or get rid of it.
                     try
                     {
                         return new Rational(Int32.Parse(token.text), 1);
@@ -75,7 +91,10 @@ namespace SaturnValley.SharpF
                 }
             };
 
-            return new Symbol("unknown:" + token.type.ToString());
+            Debug.Assert(
+                false,
+                "I don't know how to parse " + token.type.ToString());
+            return new Unspecified();
         }
     }
 }

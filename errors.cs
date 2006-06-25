@@ -1,3 +1,9 @@
+/*
+ * errors.cs:
+ *
+ * Exception classes thrown and caught by the evaluator.
+ */
+
 using System;
 
 namespace SaturnValley.SharpF

@@ -1,3 +1,14 @@
+/*
+ * prims.cs:
+ *
+ * Implementation of primitive procedures with attribute-driven dispatch.
+ * Y'know, even with attributes there's too much boilerplate in this file.
+ * I should use a macro language.  It's really big of the CLR people to try
+ * to wean us off C-style macros, but there's just too much they're good
+ * for.  The CLR folks have anticipated a lot, but it's precisely what you
+ * *don't* anticipate that macros are good for.
+ */
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,6 +17,11 @@ using System.Text;
 
 namespace SaturnValley.SharpF
 {
+    // The attribute which will direct us to bind each primitive procedure
+    // to its symbol name.  A primitive with a "magic argument" will
+    // be passed some implicit context (like the environment) as an
+    // explicit argument.
+
     public class PrimitiveAttribute : Attribute
     {
         public string name;
@@ -33,7 +49,9 @@ namespace SaturnValley.SharpF
             Environment = 1
         }
 
-        public static void CheckType(string who, int i, Datum arg, Type t)
+        // Type-checking utilities.
+
+        private static void CheckType(string who, int i, Datum arg, Type t)
         {
             if (arg != null)
             {
@@ -58,7 +76,7 @@ namespace SaturnValley.SharpF
             }
         }
 
-        public static void RequireMultiArgs(
+        private static void RequireMultiArgs(
             string who, List<Datum> what, int n, Type t)
         {
             if (what.Count < n)
@@ -72,7 +90,7 @@ namespace SaturnValley.SharpF
             }
         }
 
-        public static void RequireArgs(
+        private static void RequireArgs(
             string who, List<Datum> what, params Type[] types)
         {
             if (what.Count != types.Length)
@@ -86,6 +104,7 @@ namespace SaturnValley.SharpF
         }
 
         // Arithmetic
+
         [Primitive("+")]
         public static Datum Add(List<Datum> args)
         {
@@ -235,6 +254,7 @@ namespace SaturnValley.SharpF
         }
 
         // Lists
+
         [Primitive("car")]
         public static Datum Car(List<Datum> args)
         {
@@ -293,17 +313,22 @@ namespace SaturnValley.SharpF
             return new Rational(len, 1);
         }
 
+        // Strictly speaking, we have a problem here, which is that we're
+        // calling the evaluator on the CLR stack.  I could fix this by
+        // handling it inline, as CALL/CC; or by implementing it in Scheme.
+        // But this'll do for now.
+
         [Primitive("map", MagicArgs.Environment)]
         public static Datum Map(List<Datum> args)
         {
             // TODO: This is going to require some interesting
             // type-checking.
 
-            // shift!
+            // Shift!
             Environment env = (Environment)args[0];
             args.RemoveAt(0);
 
-            // shift!
+            // Shift!
             Datum func = args[0];
             args.RemoveAt(0);
 
@@ -326,7 +351,15 @@ namespace SaturnValley.SharpF
             return List(results);
         }
 
+        [Primitive("for-each", MagicArgs.Environment)]
+        public static Datum ForEach(List<Datum> args)
+        {
+            Map(args);
+            return new Unspecified();
+        }
+
         // Strings
+
         [Primitive("string-append")]
         public static Datum StringAppend(List<Datum> args)
         {
@@ -352,6 +385,7 @@ namespace SaturnValley.SharpF
         }
 
         // Display
+
         [Primitive("display")]
         public static Datum Display(List<Datum> args)
         {
@@ -379,13 +413,20 @@ namespace SaturnValley.SharpF
         }
             
         // Wiiiii
+
         [Primitive("call-with-current-continuation")]
         public static Datum CallCC(List<Datum> args)
         {
+            // This "implementation" is just a stub so that the CALL/CC
+            // symbol will exist.  The actual CALL/CC will be handled as a
+            // special case inside the evaluator's Apply action.  It needs
+            // to be that way so that CALL/CC will get called
+            // tail-recursively.
             return new Unspecified();
         }
 
         // Meta
+
         [Primitive("quit")]
         public static Datum Quit(List<Datum> args)
         {
@@ -405,6 +446,8 @@ namespace SaturnValley.SharpF
             return LoadInternal(filename.val);
         }
 
+        // Utilities
+
         public static Datum LoadInternal(string filename)
         {
             Datum d = new Unspecified();
@@ -420,6 +463,12 @@ namespace SaturnValley.SharpF
             }
             return d;
         }
+
+        // Initialization.  Scan this class for methods with the
+        // PrimitiveAttribute, create delegates, and store them in Datum
+        // objects.  Reflection is slow, but by creating delegates we pay
+        // the cost up front and once only.  Invocation of a primitive is
+        // just a method call on the delegate object, and thus fast.
 
         public static void BindPrimitives(Environment env)
         {
