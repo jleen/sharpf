@@ -135,6 +135,9 @@ namespace SaturnValley.SharpF
 
         private static int Gcd(int i, int j)
         {
+            if (j == 1)
+                return 1;
+
             if (i < 0)
                 i *= -1;
 
