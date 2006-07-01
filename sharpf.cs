@@ -137,13 +137,7 @@ namespace SaturnValley.SharpF
             else if (a is Rational)
             {
                 Rational r = (Rational)a;
-                StringBuilder fmt = new StringBuilder(r.Num.ToString());
-                if (r.Denom != 1)
-                {
-                    fmt.Append("/");
-                    fmt.Append(r.Denom.ToString());
-                }
-                return fmt.ToString();
+                return r.ToString();
             }
             else if (a is Boolean)
             {

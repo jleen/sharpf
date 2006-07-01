@@ -121,66 +121,6 @@ namespace SaturnValley.SharpF
         }
     }
 
-    // A Rational is stored as a numerator and a denominator.  On
-    // construction, they're reduced to lowest terms by the Euclidean
-    // algorithm.  All this is probably terribly inefficient.
-
-    public class Rational : Number
-    {
-        private int num;
-        private int denom;
-
-        public int Num { get { return num; } }
-        public int Denom { get { return denom; } }
-
-        private static int Gcd(int i, int j)
-        {
-            if (j == 1)
-                return 1;
-
-            if (i < 0)
-                i *= -1;
-
-            while (i != j)
-            {
-                if (i > j)
-                    i = i - j;
-                else
-                    j = j - i;
-            }
-
-            return i;
-        }
-
-        public Rational Reciprocal
-        {
-            get { return new Rational(denom, num); }
-        }
-
-        private void Reduce()
-        {
-            if (num == 0)
-            {
-                denom = 1;
-                return;
-            }
-
-            int gcd = Gcd(num, denom);
-            num /= gcd;
-            denom /= gcd;
-        }
-
-        public Rational(int n, int d)
-        {
-            if (d == 0)
-                throw new MathException("Division by zero!");
-
-            num = n;
-            denom = d;
-            this.Reduce();
-        }
-    }
-
     public class Boolean : Datum
     {
         public bool val;

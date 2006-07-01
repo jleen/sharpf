@@ -48,7 +48,7 @@ namespace SaturnValley.SharpF
                     // the Integer class, or get rid of it.
                     try
                     {
-                        return new Rational(Int32.Parse(token.text), 1);
+                        return new Rational(BigNum.Parse(token.text), 1);
                     }
                     catch (OverflowException)
                     {
@@ -57,12 +57,12 @@ namespace SaturnValley.SharpF
                 }
                 case TokenType.Rational: {
                     string[] nums = token.text.Split(new char[] { '/' }, 2);
-                    int num;
-                    int denom;
+                    BigNum num;
+                    BigNum denom;
                     try
                     {
-                        num = Int32.Parse(nums[0]);
-                        denom = Int32.Parse(nums[1]);
+                        num = BigNum.Parse(nums[0]);
+                        denom = BigNum.Parse(nums[1]);
                     }
                     catch (OverflowException)
                     {

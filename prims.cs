@@ -57,7 +57,7 @@ namespace SaturnValley.SharpF
             {
                 if (t == typeof(Integer))
                 {
-                    if (((Rational)arg).Denom != 1)
+                    if (((Rational)arg).Denom.CompareTo(1) != 0)
                     {
                         throw new ArgumentTypeException(
                             who, i, arg.GetType(), typeof(Integer));
@@ -110,17 +110,13 @@ namespace SaturnValley.SharpF
         {
             RequireMultiArgs("+", args, 0, typeof(Number));
 
-            int Num = 0;
-            int Denom = 1;
+            Rational result = new Rational(0, 1);
             foreach (Datum d in args)
             {
                 Rational n = (Rational)d;
-                int oldDenom = Denom;
-                Num *= n.Denom;
-                Denom *= n.Denom;
-                Num += oldDenom * n.Num;
+                result.Add(n);
             }
-            return new Rational(Num, Denom);
+            return result;
         }
 
         [Primitive("-")]
@@ -129,16 +125,22 @@ namespace SaturnValley.SharpF
             RequireMultiArgs("-", args, 1, typeof(Number));
 
             Rational n = (Rational)args[0];
+            Rational result;
             if (args.Count == 1)
             {
-                return new Rational(-n.Num, n.Denom);
+                result = new Rational(n);
+                result.Negate();
             }
             else
             {
-                args[0] = new Rational(-n.Num, n.Denom);
-                Rational res = (Rational)Add(args);
-                return new Rational(-res.Num, res.Denom);
+                result = new Rational((Rational) args[0]);
+                for (int i = 1; i < args.Count; ++i)
+                {
+                    result.Subtract((Rational) args[i]);
+                }
             }
+
+            return result;
         }
 
         [Primitive("*")]
@@ -146,15 +148,13 @@ namespace SaturnValley.SharpF
         {
             RequireMultiArgs("*", args, 0, typeof(Number));
 
-            int Num = 1;
-            int Denom = 1;
+            Rational result = new Rational(1);
             foreach (Datum d in args)
             {
                 Rational n = (Rational)d;
-                Num *= n.Num;
-                Denom *= n.Denom;
+                result.Multiply(n);
             }
-            return new Rational(Num, Denom);
+            return result;
         }
 
         [Primitive("/")]
@@ -171,20 +171,20 @@ namespace SaturnValley.SharpF
         public static Datum Quotient(List<Datum> args)
         {
             RequireArgs("quotient", args, typeof(Integer), typeof(Integer));
-            int n1 = ((Rational)args[0]).Num;
-            int n2 = ((Rational)args[1]).Num;
+            BigNum n1 = ((Rational)args[0]).Num;
+            BigNum n2 = ((Rational)args[1]).Num;
 
-            return new Rational(n1 / n2, 1);
+            return new Rational(BigNum.LongDiv(n1, n2), 1);
         }
 
         [Primitive("remainder")]
         public static Datum Remainder(List<Datum> args)
         {
             RequireArgs("remainder", args, typeof(Integer), typeof(Integer));
-            int n1 = ((Rational)args[0]).Num;
-            int n2 = ((Rational)args[1]).Num;
-
-            return new Rational(n1 - n2 * (n1 / n2), 1);
+            BigNum n1 = ((Rational)args[0]).Num;
+            BigNum n2 = ((Rational)args[1]).Num;
+            
+            return new Rational(BigNum.Remainder(n1, n2), 1);
         }
             
         [Primitive("round")]
@@ -192,13 +192,7 @@ namespace SaturnValley.SharpF
         {
             RequireArgs("round", args, typeof(Rational));
             Rational r = (Rational)args[0];
-            int n = r.Num;
-            int d = r.Denom;
-
-            // Miraculously, this seems to adhere to the Scheme/IEEE standard
-            // and round halves to the nearest even.
-            return new Rational(
-                (int)System.Math.Round((decimal)n / (decimal)d), 1);
+            return new Rational(r.Round(), 1);
         }
 
         [Primitive("floor")]
@@ -206,11 +200,8 @@ namespace SaturnValley.SharpF
         {
             RequireArgs("floor", args, typeof(Rational));
             Rational r = (Rational)args[0];
-            int n = r.Num;
-            int d = r.Denom;
 
-            return new Rational(
-                (int)System.Math.Floor((decimal)n / (decimal)d), 1);
+            return new Rational(r.Floor(), 1);
         }
 
         [Primitive("=")]
@@ -220,7 +211,7 @@ namespace SaturnValley.SharpF
 
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
-            return new Boolean(i.Num == j.Num && i.Denom == j.Denom);
+            return new Boolean(i.CompareTo(j) == 0);
         }
 
         [Primitive(">")]
@@ -230,7 +221,7 @@ namespace SaturnValley.SharpF
 
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
-            return new Boolean(i.Num * j.Denom > j.Num * i.Denom);
+            return new Boolean(i.CompareTo(j) > 0);
         }
 
         [Primitive(">=")]
@@ -240,7 +231,7 @@ namespace SaturnValley.SharpF
 
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
-            return new Boolean(i.Num * j.Denom >= j.Num * i.Denom);
+            return new Boolean(i.CompareTo(j) >= 0);
         }
 
         [Primitive("<")]
@@ -250,7 +241,17 @@ namespace SaturnValley.SharpF
 
             Rational i = (Rational)args[0];
             Rational j = (Rational)args[1];
-            return new Boolean(i.Num * j.Denom < j.Num * i.Denom);
+            return new Boolean(i.CompareTo(j) < 0);
+        }
+
+        [Primitive("<=")]
+        public static Datum LessThanEqual(List<Datum> args)
+        {
+            RequireArgs("<", args, typeof(Number), typeof(Number));
+
+            Rational i = (Rational)args[0];
+            Rational j = (Rational)args[1];
+            return new Boolean(i.CompareTo(j) <= 0);
         }
 
         // Lists
