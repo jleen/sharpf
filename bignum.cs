@@ -1473,23 +1473,12 @@ namespace SaturnValley.SharpF
             else
             {
                 // do the mixed denominator version.
-                //
-                // REVIEW PERF (RandyTh): is it beneficial to do GCD
-                // reduction here?  I think the main tradeoff here is
-                // increased GC usage vs. preventing the intermediate
-                // results from growing to be as large.
-                BigNum gcd = BigNum.Gcd(denom, a.Denom);
                 num.Assign(
                     BigNum.Add(
-                        BigNum.LongMul(
-                            BigNum.LongDiv(Num, gcd), a.Denom),
-                        BigNum.LongMul(
-                            BigNum.LongDiv(a.Num, gcd), Denom)));
+                        BigNum.LongMul(a.Denom, Num),
+                        BigNum.LongMul(Denom, a.Num)));
                 denom.Assign(
-                    BigNum.LongMul(
-                        BigNum.LongDiv(
-                            denom, gcd),
-                        a.Denom));
+                    BigNum.LongMul(Denom, a.Denom));
             }
             this.Reduce();
         }
@@ -1510,19 +1499,12 @@ namespace SaturnValley.SharpF
             }
             else
             {
-                BigNum gcd = BigNum.Gcd(denom, a.Denom);
                 num.Assign(
                     BigNum.Sub(
-                        BigNum.LongMul(
-                            BigNum.LongDiv(a.Denom, gcd), Num),
-                        BigNum.LongMul(
-                            BigNum.LongDiv(Denom, gcd), a.Num)));
+                        BigNum.LongMul(a.Denom, Num),
+                        BigNum.LongMul(Denom, a.Num)));
                 denom.Assign(
-                    BigNum.LongMul(
-                        BigNum.LongDiv(
-                            denom, gcd),
-                        a.Denom));
-                this.Reduce();
+                    BigNum.LongMul(Denom, a.Denom));
             }
             this.Reduce();
         }
