@@ -148,7 +148,7 @@ namespace SaturnValley.SharpF
         {
             RequireMultiArgs("*", args, 0, typeof(Number));
 
-            Rational result = new Rational(1);
+            Rational result = new Rational(1, 1);
             foreach (Datum d in args)
             {
                 Rational n = (Rational)d;

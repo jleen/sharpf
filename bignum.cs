@@ -702,8 +702,9 @@ namespace SaturnValley.SharpF
             // naive direct algorithm for "small" bignums, and a
             // Karatsuba-style recursive divide-and-conquer algorithm for
             // "large" bignums; If I've implemented this correctly, this
-            // gives an asymptotic complexity of around
-            // O(N^(lg(3))) = O(N^(1.56)).
+            // gives an asymptotic complexity of around O(N^(lg(3))) =
+            // O(N^(1.56)).  This approach comes from Knuth TAOCP 3rd ed,
+            // section 4.3.3 A, formulas 1 and 2.
             //
             // This is a pretty simple approach. A Toom-Cook algorithm
             // could reduce the exponent a little further at the cost of
@@ -1372,14 +1373,6 @@ namespace SaturnValley.SharpF
             denom.Assign(1);
         }
 
-        // REVIEW (RandyTh): This constructor can and has caused bugs.
-        // Should I remove it?
-        public Rational(int n)
-        {
-            num.Assign(n);
-            denom.Assign(1);
-        }
-        
         public Rational(int n, int d)
         {
             if (d == 0)
