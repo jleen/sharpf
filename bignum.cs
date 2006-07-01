@@ -12,6 +12,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace SaturnValley.SharpF
@@ -121,7 +122,7 @@ namespace SaturnValley.SharpF
         // for a single digit in our representation.
         //
         // REVIEW (RandyTh): this isn't the best name for this method IMO.
-        public static bool IsLegalFixNum(int iNum)
+        public static bool FitsInSingleDigit(int iNum)
         {
             return (iNum < digitBase && iNum > -digitBase);
         }
@@ -261,7 +262,7 @@ namespace SaturnValley.SharpF
 
             // If this int is out of range of our radix, there's
             // a chance that these comparisons could overflow.
-            if (IsLegalFixNum(other))
+            if (FitsInSingleDigit(other))
             {
                 if (isNegative && !otherIsNegative)
                 {
@@ -499,14 +500,45 @@ namespace SaturnValley.SharpF
         {
             if (isNegative == a.isNegative)
             {
-                EnsureIndex(a.size);
+                EnsureIndex(Math.Max(a.size, size));
 
                 int i = 0;
+                int k = 0;
                 for (i = 0; i < a.size; ++i)
                 {
-                    digits[i] += a.digits[i] ;
+                    if ((digits[i] += (k + a.digits[i])) != 0)
+                    {
+                        k = 0;
+                        while (digits[i] >= digitBase)
+                        {
+                            ++k;
+                            digits[i] -= digitBase;
+                        }
+                    }
+                    else
+                    {
+                        k = 0;
+                    }
                 }
-                Normalize();
+
+                for (; k != 0 && i < digits.Length; ++i)
+                {
+                    if ((digits[i] += k) != 0)
+                    {
+                        k = 0;
+                        while (digits[i] >= digitBase)
+                        {
+                            ++k;
+                            digits[i] -= digitBase;
+                        }
+                    }
+                    else
+                    {
+                        k = 0;
+                    }
+                }
+
+                size = Math.Max(size, i);
             }
             else
             {
@@ -518,7 +550,7 @@ namespace SaturnValley.SharpF
         {
             bool iValIsNegative = (iVal < 0);
 
-            if (IsLegalFixNum(iVal) &&
+            if (FitsInSingleDigit(iVal) &&
                 (size == 0 || iValIsNegative == isNegative))
             {
                 SetDigit(0, GetDigit(0) +  (iValIsNegative ? -iVal : iVal));
@@ -554,7 +586,7 @@ namespace SaturnValley.SharpF
             // this routine is not in general correct for all primitive
             // integers, so I'm limiting this to numbers that would take
             // up a single digit in our representation.
-            Debug.Assert(IsLegalFixNum(iDiv));
+            Debug.Assert(FitsInSingleDigit(iDiv));
 
             if (iDiv == 0)
             {
@@ -601,7 +633,7 @@ namespace SaturnValley.SharpF
         {
             int i;
 
-            Debug.Assert(IsLegalFixNum(iMul));
+            Debug.Assert(FitsInSingleDigit(iMul));
             
             // this should look fairly similar as compared to
             // the ShortDiv case.
@@ -641,6 +673,7 @@ namespace SaturnValley.SharpF
         {
             EnsureIndex(size + iDigits);
             Array.Copy(digits, 0, digits, iDigits, size);
+            Array.Clear(digits, 0, iDigits);
             size += iDigits;
         }
 
@@ -650,6 +683,7 @@ namespace SaturnValley.SharpF
             if (iDigits < size)
             {
                 Array.Copy(digits, iDigits, digits, 0, size);
+                Array.Clear(digits, size - iDigits, iDigits);
                 size -= iDigits;
             }
             else
@@ -662,36 +696,110 @@ namespace SaturnValley.SharpF
         public static BigNum LongMul(BigNum a, BigNum b)
         {
             int i, j;
-            BigNum bnResult = new BigNum();
-            bnResult.EnsureIndex(a.size + b.size);
-            bnResult.Zero();
+            BigNum bnResult;
 
-            // REVIEW PERF (RandyTh): This uses the simple naive O(NM) or
-            // O(N^2) algorithm.  It would be better if I switched to an
-            // asymptotically efficient algorithm for very large bignums.
-            // A Karatsuba or Toom-Cook algorithm (recursive
-            // divide-and-conquer) would be the simplest approach to lower
-            // the exponenent in the polynomial here, but a modular FFT
-            // algorithm like Schoenhage-Strassen would be more efficient
-            // at O(N*log(N)*log(log(N))).
+            // REVIEW PERF (RandyTh): This uses a hybrid algorithm -- the
+            // naive direct algorithm for "small" bignums, and a
+            // Karatsuba-style recursive divide-and-conquer algorithm for
+            // "large" bignums; If I've implemented this correctly, this
+            // gives an asymptotic complexity of around
+            // O(N^(lg(3))) = O(N^(1.56)).
+            //
+            // This is a pretty simple approach. A Toom-Cook algorithm
+            // could reduce the exponent a little further at the cost of
+            // rapidly increasing complexity, but a modular FFT algorithm
+            // like Schoenhage-Strassen would be more efficient at
+            // O(N*log(N)*log(log(N))).
             //
             // Note however, that the constant on the simple approach
             // is quite low, so it wins until the bignums get to be
-            // fairly large.
-            
-            for (i = 0; i < a.size; ++i)
+            // fairly large.  I picked this crossover point with a very
+            // small amount of testing, so there's probably room for
+            // further refinement here.
+
+            const int s_nKaratsuba = 16;
+
+            if (a.size >= s_nKaratsuba &&
+                b.size >= s_nKaratsuba)
             {
-                for (j = 0; j < b.size; ++j)
+                BigNum a0 = new BigNum();
+                BigNum a1 = new BigNum();
+  
+                BigNum b0 = new BigNum();
+                BigNum b1 = new BigNum();
+
+                int half = Math.Max((a.size + 1)/2, (b.size + 1)/2);
+                
+                a0.EnsureIndex(half);
+                a1.EnsureIndex(half);
+                for (i = 0; i < half; ++i)
                 {
-                    bnResult.digits[i + j] += a.digits[i] * b.digits[j];
+                    if ((a0.digits[i] = a.GetDigit(i)) != 0)
+                        a0.size = i + 1;
+                    
+                    if ((a1.digits[i] = a.GetDigit(i + half)) != 0)
+                        a1.size = i + 1;
+                }
+                
+                b0.EnsureIndex(half);
+                b1.EnsureIndex(half);
+                for (i = 0; i < half; ++i)
+                {
+                    if ((b0.digits[i] = b.GetDigit(i)) != 0)
+                        b0.size = i + 1;
+
+                    if ((b1.digits[i] = b.GetDigit(i + half)) != 0)
+                        b1.size = i + 1;
                 }
 
-                // REVIEW PERF (RandyTh): Using Normalize here is lazy and
-                // cheesy.  Directly handling the rippling overflow is
-                // more efficient in the common case of only propagating
-                // to a few digits, but Normalize is always pessimistic.
+                BigNum prod1 = LongMul(a1, b1);
+                BigNum prod2 = new BigNum(prod1);
+                prod1.ShiftMul(half);
+                prod1.Add(prod2);
+                prod1.ShiftMul(half);
+
+                BigNum prod3 = LongMul(a0, b0);
+                prod2 = new BigNum(prod3);
+                prod3.ShiftMul(half);
+                prod3.Add(prod2);
                 
-                bnResult.Normalize();
+                prod2 = LongMul(Sub(a1, a0), Sub(b0, b1));
+                prod2.ShiftMul(half);
+                bnResult = Add(prod1, prod2);
+                bnResult.Add(prod3);
+            }
+            else
+            {
+                bnResult = new BigNum();
+                bnResult.EnsureIndex(a.size + b.size);
+                bnResult.Zero();
+
+                int k;
+                int iRem = 0;
+                for (i = 0; i < a.size; ++i)
+                {
+                    k = 0;
+                    for (j = 0; j < b.size; ++j)
+                    {
+                        k = Math.DivRem(
+                            (k + bnResult.digits[i + j] +
+                             a.digits[i] * b.digits[j]),
+                            digitBase,
+                            out iRem);
+                        bnResult.digits[i + j] = iRem;
+                    }
+
+                    bnResult.digits[i + j] += k;
+                }
+
+                for (i = a.size + b.size; i >= 0; --i)
+                {
+                    if (bnResult.digits[i] != 0)
+                    {
+                        bnResult.size = i + 1;
+                        break;
+                    }
+                }
             }
 
             bnResult.isNegative = a.isNegative ^ b.isNegative;
@@ -801,9 +909,10 @@ namespace SaturnValley.SharpF
                 {
                     bnTemp.Assign(bnDiv);
                     bnTemp.ShortMul(qhat);
-                    while (bnTemp.CompareToAbs(bnNum) < 0)
+
+                    if (bnNum.size > bnTemp.size)
                     {
-                        bnTemp.ShiftMul(1);
+                        bnTemp.ShiftMul(bnNum.size - bnTemp.size);
                     }
 
                     if (bnTemp.CompareToAbs(bnNum) > 0)
@@ -967,12 +1076,60 @@ namespace SaturnValley.SharpF
                     isNegative = true;
             }
         }
-  
+
+        // REVIEW (RandyTh): I want to have the freedom to switch the
+        // digitBase freely between power of 10 values and other values,
+        // so I'n suppressing the warning that one branch here will always
+        // be unused at compile time.
+        #pragma warning disable 162
         public override string ToString()
         {
-            return ToStringNonBase10();
+            if (digitBase == 10 || digitBase == 100 || digitBase == 1000
+                || digitBase == 10000 || digitBase == 100000)
+            {
+                return ToStringBase10();
+            }
+            else
+            {
+                return ToStringNonBase10();
+            }
         }
+        #pragma warning restore 162
 
+        public string ToStringBase10()
+        {
+            if (size == 0)
+            {
+                return "0";
+            }
+            else
+            {            
+                int nPow = 0;
+                int iBase = digitBase;
+                do
+                {
+                    ++nPow;
+                    iBase /= 10;
+                }
+                while (iBase > 1);
+                
+                StringBuilder sb = new StringBuilder();
+                if (isNegative)
+                    sb.Append('-');
+
+                int i = size - 1;
+                string strFormat = "{0:D" + nPow.ToString() + "}";
+
+                sb.Append(digits[i]);
+                  for (i = size - 2; i >= 0; --i)
+                {
+                    sb.AppendFormat(strFormat, digits[i]);
+                }
+
+                return sb.ToString();
+            }
+        }
+        
         // REVIEW PERF (RandyTh): Again, note that this code has nonlinear
         // efficiency.  See above on how this could be improved.  I do
         // think this is pretty reasonable for small numbers, though.
@@ -1399,6 +1556,11 @@ namespace SaturnValley.SharpF
             BigNum rem = new BigNum();
             BigNum.LongDiv(Num, Denom, out rem);
             return rem;
+        }
+
+        public bool Even()
+        {
+            return Denom.CompareTo(1) == 0 && Num.Even();
         }
 
         public BigNum Round()

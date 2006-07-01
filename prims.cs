@@ -299,6 +299,16 @@ namespace SaturnValley.SharpF
             return new Boolean(args[0] == null);
         }
 
+        [Primitive("even?")]
+        public static Datum EvenP(List<Datum> args)
+        {
+            RequireArgs("even?", args, typeof(Number));
+
+            Rational r = (Rational) args[0];
+
+            return new Boolean(r.Even());
+        }
+
         [Primitive("length")]
         public static Datum Length(List<Datum> args)
         {
