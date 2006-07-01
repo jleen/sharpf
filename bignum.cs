@@ -741,7 +741,7 @@ namespace SaturnValley.SharpF
             
             if (n > m)
             {
-                bnRem = bnNum;
+                bnRem = new BigNum(bnNum);
                 return bnResult;
             }
 
@@ -863,13 +863,17 @@ namespace SaturnValley.SharpF
         // so this is probably OK for now.
         public static BigNum Gcd(BigNum u, BigNum v)
         {
-            if (v.CompareTo(1) == 0)
+            if (v.CompareTo(1) == 0 || u.CompareTo(1) == 0)
                 return new BigNum(1);
     
             u = new BigNum(u);
             v = new BigNum(v);
 
-            Debug.Assert(!u.IsNegative);
+            if (u.isNegative)
+            {
+                u.Negate();
+            }
+            
             if (v.IsNegative)
             {
                 v.Negate();
