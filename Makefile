@@ -8,6 +8,7 @@ clean:
 	-rm tags
 
 sharpf.exe: \
+	bignum.cs \
 	data.cs \
 	env.cs \
 	errors.cs \
