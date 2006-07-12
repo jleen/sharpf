@@ -24,3 +24,12 @@
 
 (define (not p)
   (if p #f #t))
+
+(define (equal? a b)
+  (if (pair? a)
+      (if (pair? b)
+          (if (equal? (car a) (car b))
+              (equal? (cdr a) (cdr b))
+            #f)
+        #f)
+    (eqv? a b)))

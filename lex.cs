@@ -97,7 +97,7 @@ namespace SaturnValley.SharpF
         // unclear where break will take us, and it'll be fragile when we
         // refactor.
 
-        public static IEnumerable<Token> Lex(StreamReader sr)
+        public static IEnumerable<Token> Lex(TextReader sr)
         {
             string line;
             while (null != (line = sr.ReadLine()))

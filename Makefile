@@ -21,5 +21,8 @@ sharpf.exe: \
 
 	csc /debug $^
 
+test: sharpf.exe tests.scm quit.scm
+	./sharpf.exe tests.scm -e "(do-tests tests)" -e "(quit)"
+
 tags: *.cs *.scm
 	ctags $^

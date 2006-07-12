@@ -20,6 +20,30 @@ namespace SaturnValley.SharpF
         {
             Environment.Toplevel = Environment.CreateDefaultEnvironment();
             Primitives.LoadInternal("library.scm");
+
+            bool evalArg = false;
+            foreach (string arg in args)
+            {
+                if (evalArg)
+                {
+                    Evaluator.Act(new Evaluator.Action(
+                        Evaluator.Actor.Eval,
+                        Read(new System.IO.StringReader(arg)),
+                        Environment.Toplevel,
+                        null));
+                    evalArg = false;
+                    continue;
+                }
+
+                if (arg == "-e")
+                {
+                    evalArg = true;
+                    continue;
+                }
+
+                Primitives.LoadInternal(arg);
+            }
+
             System.Console.WriteLine("#f");
                 
             while (true)
@@ -45,7 +69,7 @@ namespace SaturnValley.SharpF
             }
         }
 
-        public static Datum Read(System.IO.StreamReader sr)
+        public static Datum Read(System.IO.TextReader sr)
         {
             IEnumerator<Token> tokens =
                 Lexer.Lex(sr).GetEnumerator();

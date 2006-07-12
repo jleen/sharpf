@@ -103,6 +103,55 @@ namespace SaturnValley.SharpF
             }
         }
 
+        // Types
+
+        [Primitive("pair?")]
+        public static Datum PairP(List<Datum> args)
+        {
+            return new Boolean(args[0] is Pair);
+        }
+
+        // Equality
+
+        [Primitive("eqv?")]
+        public static Datum EqvP(List<Datum> args)
+        {
+            Datum a = args[0];
+            Datum b = args[1];
+
+            if (a is Rational)
+            {
+                if (!(b is Rational))
+                    return new Boolean(false);
+
+                Rational i = (Rational)args[0];
+                Rational j = (Rational)args[1];
+                return new Boolean(i.CompareTo(j) == 0);
+            }
+            else if (a is String)
+            {
+                if (!(b is String))
+                    return new Boolean(false);
+
+                String s = (String)a;
+                String t = (String)b;
+                return new Boolean(s.val == t.val);
+            }
+            else if (a is Symbol)
+            {
+                if (!(b is String))
+                    return new Boolean(false);
+
+                Symbol x = (Symbol)a;
+                Symbol y = (Symbol)b;
+                return new Boolean(x.name == y.name);
+            }
+            else
+            {
+                return new Boolean(a == b);
+            }
+        }
+
         // Arithmetic
 
         [Primitive("+")]
@@ -360,6 +409,31 @@ namespace SaturnValley.SharpF
                 results.Add(res);
             }
             return List(results);
+        }
+
+        [Primitive("current-environment", MagicArgs.Environment)]
+        public static Datum CurrentEnvironment(List<Datum> args)
+        {
+            return args[0];
+        }
+
+        [Primitive("scheme-report-environment")]
+        public static Datum SchemeReportEnvironment(List<Datum> args)
+        {
+            return Environment.CreateDefaultEnvironment();
+        }
+
+        [Primitive("eval")]
+        public static Datum Eval(List<Datum> args)
+        {
+            Datum exp = args[0];
+            Environment env = (Environment)args[1];
+
+            return Evaluator.Act(new Evaluator.Action(
+                Evaluator.Actor.Eval,
+                exp,
+                env,
+                null));
         }
 
         [Primitive("for-each", MagicArgs.Environment)]
