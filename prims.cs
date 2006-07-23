@@ -139,7 +139,7 @@ namespace SaturnValley.SharpF
             }
             else if (a is Symbol)
             {
-                if (!(b is String))
+                if (!(b is Symbol))
                     return new Boolean(false);
 
                 Symbol x = (Symbol)a;

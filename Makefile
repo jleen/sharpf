@@ -1,3 +1,6 @@
+CSC=gmcs
+RUNTIME=mono
+
 all: tags sharpf.exe
 
 full: clean all
@@ -19,10 +22,10 @@ sharpf.exe: \
 	sharpf.cs \
 	transform.cs \
 
-	csc /debug $^
+	$(CSC) /debug /out:$@ $^
 
 test: sharpf.exe tests.scm quit.scm
-	./sharpf.exe tests.scm -e "(do-tests tests)" -e "(quit)"
+	$(RUNTIME) ./sharpf.exe tests.scm -e "(do-tests tests)" -e "(quit)"
 
 tags: *.cs *.scm
 	ctags $^
